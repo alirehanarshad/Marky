@@ -26,7 +26,8 @@ import {
   Video,
   Image as ImageIcon,
   Coins,
-  LogOut
+  LogOut,
+  User
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -65,7 +66,7 @@ export default function Sidebar() {
     {
       title: 'CORE PLATFORM',
       items: [
-        { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'AI Marketing Hub', href: '/ai-hub', icon: LayoutGrid, badge: '97 Tools', badgeColor: 'bg-[#7A5DBB]/25 text-[#D1C3FF] border-[#7A5DBB]/40' },
         { name: 'Creative Studio', href: '/creative-studio', icon: Palette, badge: 'AI Studio', badgeColor: 'bg-gradient-to-r from-[#4239C4]/30 to-[#D97FA5]/30 text-[#FFC4DA] border-[#7A5DBB]/40' },
         { name: 'Marketing Strategy', href: '/marketing-strategy', icon: FileSpreadsheet, badge: 'CMO AI', badgeColor: 'bg-[#D97FA5]/20 text-[#FFC4DA] border-[#D97FA5]/30' }
@@ -210,11 +211,20 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* Quick Account Navigation */}
-        <div className="grid grid-cols-2 gap-1.5">
+        {/* User Account Menu (#21) */}
+        <div className="grid grid-cols-3 gap-1">
+          <Link
+            href="/settings?tab=profile"
+            className="flex items-center justify-center gap-1 py-1.5 px-1.5 rounded-lg bg-[#14112E] hover:bg-[#1F1B47] text-[#B4AFCC] hover:text-white text-[10px] font-semibold border border-[#1C1938] transition-colors"
+            title="Account Profile"
+          >
+            <User className="w-3 h-3 text-[#A59FFF]" />
+            <span>Profile</span>
+          </Link>
           <Link
             href="/settings"
-            className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-[#14112E] hover:bg-[#1F1B47] text-[#B4AFCC] hover:text-white text-[11px] font-semibold border border-[#1C1938] transition-colors"
+            className="flex items-center justify-center gap-1 py-1.5 px-1.5 rounded-lg bg-[#14112E] hover:bg-[#1F1B47] text-[#B4AFCC] hover:text-white text-[10px] font-semibold border border-[#1C1938] transition-colors"
+            title="System Settings"
           >
             <Settings className="w-3 h-3 text-[#A59FFF]" />
             <span>Settings</span>
@@ -226,7 +236,8 @@ export default function Sidebar() {
                 window.location.href = '/login';
               }
             }}
-            className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-[#14112E] hover:bg-red-950/40 text-[#B4AFCC] hover:text-red-300 text-[11px] font-semibold border border-[#1C1938] transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1 py-1.5 px-1.5 rounded-lg bg-[#14112E] hover:bg-red-950/40 text-[#B4AFCC] hover:text-red-300 text-[10px] font-semibold border border-[#1C1938] transition-colors cursor-pointer"
+            title="Terminate Session"
           >
             <LogOut className="w-3 h-3 text-red-400" />
             <span>Sign Out</span>

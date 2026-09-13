@@ -523,6 +523,22 @@ export const api = {
   getAdminUsers: (fresh = true) => request('/admin/users', { fresh }),
   updateUserStatus: (id, status) => request(`/admin/users/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   updateUserRole: (id, role) => request(`/admin/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }),
+
+  // Contact Form
+  submitContactForm: (payload) => request('/contact', { method: 'POST', body: JSON.stringify(payload) }),
+  getContactSubmissions: (fresh = true) => request('/contact', { fresh }),
+
+  // Unified Enterprise Integrations & Provider Vault (#22-#39)
+  getIntegrations: (fresh = true) => request('/integrations', { fresh }),
+  saveIntegration: (providerId, credentials, metadata = {}) => request(`/integrations/${providerId}/save`, {
+    method: 'POST',
+    body: JSON.stringify({ credentials, metadata })
+  }),
+  testIntegration: (providerId, credentials) => request(`/integrations/${providerId}/test`, {
+    method: 'POST',
+    body: JSON.stringify({ credentials })
+  }),
+  disconnectIntegration: (providerId) => request(`/integrations/${providerId}`, { method: 'DELETE' }),
 };
 
 export default api;

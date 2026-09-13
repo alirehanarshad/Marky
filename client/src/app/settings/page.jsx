@@ -41,6 +41,7 @@ import MetricCard from '@/components/ui/MetricCard';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Tabs from '@/components/ui/Tabs';
 import Portal, { useBodyScrollLock } from '@/components/ui/Portal';
+import IntegrationsManager from '@/components/settings/IntegrationsManager';
 
 export default function SettingsPage() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -93,6 +94,11 @@ export default function SettingsPage() {
 
   useEffect(() => {
     checkCurrentUser();
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam) setActiveTab(tabParam);
+    }
   }, []);
 
   const checkCurrentUser = async () => {
@@ -408,23 +414,22 @@ export default function SettingsPage() {
 
   const isAdmin = currentUser?.role === 'ADMIN';
 
-  // Role-Aware Navigation Tabs
-  const tabs = isAdmin
-    ? [
-        { id: 'profile', label: 'Profile & Account' },
-        { id: 'users', label: 'User Management', count: adminUsers.length || undefined },
-        { id: 'apify', label: 'Apify Scraper Engine' },
-        { id: 'ai', label: 'AI Providers & Keys' },
-        { id: 'permissions', label: 'Roles & Capabilities' },
-        { id: 'diagnostics', label: 'System Diagnostics' },
-        { id: 'preferences', label: 'Platform Preferences' }
-      ]
-    : [
-        { id: 'profile', label: 'Profile & Account' },
-        { id: 'preferences', label: 'Preferences' },
-        { id: 'notifications', label: 'Notifications' },
-        { id: 'integrations', label: 'Personal Integrations' }
-      ];
+  // Enterprise Platform Configuration Tabs
+  const tabs = [
+    { id: 'profile', label: 'Profile & Account' },
+    { id: 'ai_providers', label: 'AI Providers & Keys' },
+    { id: 'db_providers', label: 'Database & Backend Providers' },
+    { id: 'connect_apps', label: 'Connect Apps' },
+    ...(isAdmin
+      ? [
+          { id: 'users', label: 'User Management', count: adminUsers.length || undefined },
+          { id: 'apify', label: 'Apify Scraper Engine' },
+          { id: 'permissions', label: 'Roles & Capabilities' },
+          { id: 'diagnostics', label: 'System Diagnostics' }
+        ]
+      : []),
+    { id: 'preferences', label: 'Platform Preferences' }
+  ];
 
   return (
     <div className="space-y-6 pb-12 animate-fadeIn">
@@ -814,52 +819,34 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* 6. TAB: AI Providers & Keys (ADMIN ONLY) */}
-      {activeTab === 'ai' && isAdmin && (
-        <div className="marky-card p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-black text-[#141226] flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#7A5DBB]" />
-                <span>Google Gemini AI Orchestration Engine</span>
-              </h3>
-              <p className="text-xs text-[#6C6782]">
-                Powering Marky's 97 marketing tools, competitive intelligence, and lead scoring.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${aiStatus?.configured ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-              <span className="text-xs font-bold text-[#141226]">
-                {aiStatus?.configured ? 'Gemini 3.1 Live' : 'Smart Offline Fallback Engine'}
-              </span>
-            </div>
-          </div>
+      {/* 6. TAB: AI Providers & Keys (#22 - #28) */}
+      {activeTab === 'ai_providers' && (
+        <IntegrationsManager
+          categoryFilter="ai"
+          title="AI Providers & Key Management"
+          description="Configure your Google Gemini, OpenAI, Groq, Anthropic, and image-generation engine credentials. All secrets are encrypted at rest with AES-256."
+          icon={Sparkles}
+        />
+      )}
 
-          <form onSubmit={handleSaveGeminiKey} className="space-y-3">
-            <label className="block text-xs font-bold text-[#141226]">Configure Gemini API Key</label>
-            <div className="flex gap-2">
-              <input
-                type="password"
-                placeholder="AIzaSy..."
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                className="flex-1 bg-[#F7F6FA] border border-[#ECE8E3] rounded-xl px-3.5 py-2 text-xs text-[#141226] focus:outline-hidden focus:border-[#4239C4]"
-              />
-              <button
-                type="submit"
-                disabled={!apiKey.trim()}
-                className="marky-btn-primary px-4 py-2 text-xs font-bold cursor-pointer disabled:opacity-50"
-              >
-                Save Key
-              </button>
-            </div>
-            {keyFeedback && (
-              <div className="p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-xl">
-                {keyFeedback}
-              </div>
-            )}
-          </form>
-        </div>
+      {/* 7. TAB: Database & Backend Providers (#29 - #32) */}
+      {activeTab === 'db_providers' && (
+        <IntegrationsManager
+          categoryFilter="database"
+          title="Database & Backend Providers"
+          description="Connect your external Supabase, Google Firebase, or PostgreSQL instances without destabilizing local SQLite records."
+          icon={Database}
+        />
+      )}
+
+      {/* 8. TAB: Connect Apps (#33 - #39) */}
+      {activeTab === 'connect_apps' && (
+        <IntegrationsManager
+          categoryFilter="apps"
+          title="Connect Apps & Channels"
+          description="Connect Meta Ads Manager, Shopify storefronts, HubSpot CRM, and WhatsApp Cloud API for automated execution."
+          icon={Globe}
+        />
       )}
 
       {/* 7. TAB: Roles & Capabilities Matrix (ADMIN ONLY) */}

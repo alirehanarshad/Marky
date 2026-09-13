@@ -21,8 +21,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`h-full bg-[#FCFBFA] antialiased ${plusJakartaSans.variable}`}>
-      <body className="h-full m-0 p-0 overflow-hidden font-sans text-slate-900 bg-[#FCFBFA]">
+    <html lang="en" className={`min-h-full bg-[#FCFBFA] antialiased ${plusJakartaSans.variable}`}>
+      <body className="min-h-full m-0 p-0 font-sans text-slate-900 bg-[#FCFBFA]">
         <AppLayout>{children}</AppLayout>
       </body>
     </html>

@@ -22,6 +22,8 @@ import apifyRouter from './routes/apify.routes.js';
 import jobsRouter from './routes/jobs.routes.js';
 import authRouter from './routes/auth.routes.js';
 import adminUsersRouter from './routes/admin-users.routes.js';
+import integrationsRouter from './routes/integrations.routes.js';
+import contactRouter from './routes/contact.routes.js';
 import { applySecurityHeaders } from './middleware/security.middleware.js';
 import { authenticate, requireRole, optionalAuth } from './middleware/auth.middleware.js';
 import { aiService } from './services/ai.service.js';
@@ -75,7 +77,9 @@ app.use((req, res, next) => {
     req.path.startsWith('/api/auth') ||
     req.path.startsWith('/api/admin/users') ||
     req.path.startsWith('/api/crm/leads/') ||
-    req.path.startsWith('/api/competitors/')
+    req.path.startsWith('/api/competitors/') ||
+    req.path.startsWith('/api/integrations') ||
+    req.path.startsWith('/api/contact')
   ) {
     return next();
   }
@@ -177,6 +181,8 @@ app.use('/api/apify', apifyRouter);
 app.use('/api/jobs', jobsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/admin/users', adminUsersRouter);
+app.use('/api/integrations', integrationsRouter);
+app.use('/api/contact', contactRouter);
 
 // Global Error Handler — Sanitize output in production, protect against info leakage
 app.use((err, req, res, next) => {

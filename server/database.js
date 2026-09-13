@@ -102,7 +102,43 @@ export async function initDatabase() {
     await db.run(`CREATE INDEX IF NOT EXISTS idx_background_jobs_user_id ON background_jobs(user_id)`);
     await db.run(`CREATE INDEX IF NOT EXISTS idx_product_profiles_user_brand ON product_profiles(user_id, brand_id)`);
     await db.run(`CREATE INDEX IF NOT EXISTS idx_saved_content_user_brand ON saved_content(user_id, brand_id)`);
+    await db.run(`CREATE INDEX IF NOT EXISTS idx_user_integrations_uid ON user_integrations(user_id)`);
+    await db.run(`CREATE INDEX IF NOT EXISTS idx_user_integrations_provider ON user_integrations(user_id, provider_id)`);
+    await db.run(`CREATE INDEX IF NOT EXISTS idx_contact_submissions_created ON contact_submissions(created_at)`);
   } catch (e) {}
+
+  // 0b. User Integrations & Provider Credentials Vault (AES-256 Encrypted at Rest)
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS user_integrations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      provider_id TEXT NOT NULL,
+      provider_type TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      credentials_encrypted TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'NOT_CONNECTED',
+      capabilities_json TEXT,
+      metadata_json TEXT,
+      last_tested_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, provider_id)
+    )
+  `);
+
+  // 0c. Public Contact Submissions Table
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS contact_submissions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      message TEXT NOT NULL,
+      ip_address TEXT,
+      status TEXT DEFAULT 'NEW',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 
   // Bootstrap Administrator Account
   try {

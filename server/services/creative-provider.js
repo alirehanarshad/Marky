@@ -18,8 +18,7 @@ export class CreativeProvider {
     return Boolean(this.magicHourApiKey && this.magicHourApiKey.length > 0);
   }
 
-  // 1. Generate Image (Eden AI -> Magic Hour -> Pollinations AI Real Generative Engine)
-  async generateImage({ prompt, negativePrompt, aspectRatio = '1:1', style = 'Photorealistic', brandContext = '', attachedAsset = null }) {
+  async generateImage({ prompt, negativePrompt, aspectRatio = '1:1', style = 'Photorealistic', brandContext = '', attachedAsset = null, customApiKey = null }) {
     if (!prompt || !prompt.trim()) {
       throw new Error('Prompt is required for image generation.');
     }
@@ -37,15 +36,17 @@ export class CreativeProvider {
       };
     }
 
+    const effectiveEdenKey = customApiKey || this.edenApiKey;
+
     // ── 1. Attempt Eden AI Live Image Generation if configured ──
-    if (this.isEdenConfigured()) {
+    if (effectiveEdenKey && effectiveEdenKey.length > 0) {
       const edenProviders = ['openai', 'stabilityai', 'replicate'];
       for (const prov of edenProviders) {
         try {
           const edenRes = await fetch(`${this.edenBaseUrl}/image/generation`, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${this.edenApiKey}`,
+              'Authorization': `Bearer ${effectiveEdenKey}`,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { db } from '../database.js';
 import { creativeProvider } from '../services/creative-provider.js';
+import { cryptoService } from '../services/crypto.service.js';
 
 const router = Router();
 
@@ -76,13 +77,27 @@ router.post('/image', async (req, res) => {
     // Deduct credits before generating
     const creditResult = await deductCredits(totalCost, 'image');
 
+    const userId = req.user?.id || 1;
+    let customApiKey = null;
+    try {
+      const row = await db.get(
+        "SELECT credentials_encrypted FROM user_integrations WHERE user_id = ? AND provider_id IN ('edenai', 'stability')",
+        [userId]
+      );
+      if (row) {
+        const decrypted = JSON.parse(cryptoService.decrypt(row.credentials_encrypted) || '{}');
+        if (decrypted.apiKey) customApiKey = decrypted.apiKey;
+      }
+    } catch (e) {}
+
     const result = await creativeProvider.generateImage({
       prompt,
       negativePrompt,
       aspectRatio,
       style,
       brandContext,
-      attachedAsset
+      attachedAsset,
+      customApiKey
     });
 
     // Record job in creative_jobs

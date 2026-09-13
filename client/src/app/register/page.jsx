@@ -15,19 +15,21 @@ import {
 } from 'lucide-react';
 import api from '@/lib/api';
 
-function LoginContent() {
+function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTarget = searchParams.get('redirect') || '/dashboard';
+  const planParam = searchParams.get('plan') || 'free';
 
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
-    // If user is already authenticated, redirect to dashboard
+    // If already authenticated, redirect straight to dashboard
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('marky_token');
       if (token) {
@@ -40,37 +42,62 @@ function LoginContent() {
     e.preventDefault();
     setError('');
     setSuccessMsg('');
-    setLoading(true);
 
+    if (!name.trim()) {
+      setError('Please enter your full name.');
+      return;
+    }
+
+    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Password confirmation does not match.');
+      return;
+    }
+
+    setLoading(true);
     try {
-      const res = await api.login(email.trim(), password);
+      const res = await api.register(name.trim(), email.trim(), password);
       if (res.success && res.token) {
         localStorage.setItem('marky_token', res.token);
         localStorage.setItem('marky_user', JSON.stringify(res.user));
-        // Notify app components of auth change
         window.dispatchEvent(new Event('authChange'));
-        setSuccessMsg('Authentication successful! Loading workspace...');
+        setSuccessMsg('Account created successfully! Provisioning your workspace...');
         setTimeout(() => {
-          router.replace(redirectTarget);
-        }, 500);
+          router.replace('/dashboard');
+        }, 800);
       } else {
-        setError(res.error || 'Invalid email or password');
+        setError(res.error || 'Registration failed. Please check your details.');
       }
     } catch (err) {
-      setError(err.message || 'An error occurred during authentication');
+      setError(err.message || 'An error occurred during account creation.');
     } finally {
       setLoading(false);
     }
   };
 
+  const planTitles = {
+    free: 'Free Community Edition ($0)',
+    ultra: 'Ultra Growth Edition ($49/mo)',
+    pro: 'Pro Enterprise Agency Edition ($1,999/mo)'
+  };
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-[#0B091B] relative overflow-hidden">
-      {/* Dynamic Background Glows */}
+      {/* Background Ambience */}
       <div className="absolute top-1/4 -left-32 w-96 h-96 rounded-full bg-gradient-to-tr from-[#4239C4]/30 via-[#7A5DBB]/20 to-transparent blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -right-32 w-96 h-96 rounded-full bg-gradient-to-br from-[#D97FA5]/20 via-[#A73B9D]/15 to-transparent blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-[#ECE8E3] overflow-hidden relative z-10 animate-fadeIn">
-        {/* Top Header */}
+        {/* Header Banner */}
         <div className="p-8 pb-6 text-center border-b border-[#ECE8E3] bg-[#FCFBFA]">
           <Link href="/" className="inline-block">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#4239C4] via-[#7A5DBB] to-[#F3C5A8] p-1.5 mx-auto mb-3 shadow-lg shadow-indigo-950/20 flex items-center justify-center">
@@ -82,14 +109,14 @@ function LoginContent() {
             </div>
           </Link>
           <h1 className="text-xl font-extrabold text-[#141226] tracking-tight">
-            Sign In to Marky
+            Create Your Marky Workspace
           </h1>
           <p className="text-xs text-[#6C6782] mt-1">
-            Access your AI Marketing Command Center
+            Selected Tier: <strong className="text-[#4239C4]">{planTitles[planParam] || 'Free Community Edition'}</strong>
           </p>
         </div>
 
-        {/* Credentials Form */}
+        {/* Form Container */}
         <div className="p-8 space-y-5">
           {error && (
             <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2.5 animate-fadeIn">
@@ -107,13 +134,28 @@ function LoginContent() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-[#141226]">Email Address</label>
+              <label className="text-xs font-bold text-[#141226]">Full Name</label>
+              <div className="relative">
+                <User className="w-4 h-4 text-[#8E8AAB] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  required
+                  placeholder="Ali Rehan"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#F7F5F2] border border-[#ECE8E3] text-xs font-medium text-[#141226] placeholder-[#8E8AAB] focus:bg-white focus:outline-none focus:border-[#4239C4] focus:ring-1 focus:ring-[#4239C4] transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-[#141226]">Business Email Address</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-[#8E8AAB] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
                   required
-                  placeholder="admin@marky.ai"
+                  placeholder="name@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#F7F5F2] border border-[#ECE8E3] text-xs font-medium text-[#141226] placeholder-[#8E8AAB] focus:bg-white focus:outline-none focus:border-[#4239C4] focus:ring-1 focus:ring-[#4239C4] transition-all"
@@ -122,18 +164,30 @@ function LoginContent() {
             </div>
 
             <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-[#141226]">Password</label>
-                <span className="text-[11px] text-[#6C6782]">Default: Admin@Marky2026!</span>
-              </div>
+              <label className="text-xs font-bold text-[#141226]">Password</label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-[#8E8AAB] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="password"
                   required
-                  placeholder="••••••••••••"
+                  placeholder="Minimum 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#F7F5F2] border border-[#ECE8E3] text-xs font-medium text-[#141226] placeholder-[#8E8AAB] focus:bg-white focus:outline-none focus:border-[#4239C4] focus:ring-1 focus:ring-[#4239C4] transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-[#141226]">Confirm Password</label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-[#8E8AAB] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="password"
+                  required
+                  placeholder="Re-enter password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#F7F5F2] border border-[#ECE8E3] text-xs font-medium text-[#141226] placeholder-[#8E8AAB] focus:bg-white focus:outline-none focus:border-[#4239C4] focus:ring-1 focus:ring-[#4239C4] transition-all"
                 />
               </div>
@@ -147,53 +201,21 @@ function LoginContent() {
               {loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Authenticating...</span>
+                  <span>Provisioning Account...</span>
                 </>
               ) : (
                 <>
-                  <span>Enter Command Center</span>
+                  <span>Create Workspace</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
 
-          {/* Quick Demo Credentials Helper */}
-          <div className="p-3.5 rounded-2xl bg-[#FCFBFA] border border-[#ECE8E3] space-y-2 text-xs">
-            <p className="font-bold text-[#141226] flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#7A5DBB]" />
-              <span>Quick Login Credentials</span>
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('admin@marky.ai');
-                  setPassword('Admin@Marky2026!');
-                }}
-                className="p-2 rounded-xl bg-white border border-[#ECE8E3] hover:border-[#4239C4] text-left transition-colors cursor-pointer"
-              >
-                <div className="font-bold text-[#141226] text-[11px]">Administrator</div>
-                <div className="text-[10px] text-[#6C6782]">Full System Access</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('user@marky.ai');
-                  setPassword('User@Marky2026!');
-                }}
-                className="p-2 rounded-xl bg-white border border-[#ECE8E3] hover:border-[#7A5DBB] text-left transition-colors cursor-pointer"
-              >
-                <div className="font-bold text-[#141226] text-[11px]">Standard Marketer</div>
-                <div className="text-[10px] text-[#6C6782]">Standard Tenant</div>
-              </button>
-            </div>
-          </div>
-
-          <div className="pt-2 border-t border-[#ECE8E3] text-center text-xs text-[#6C6782]">
-            Don't have an account?{' '}
-            <Link href="/register" className="text-[#4239C4] font-bold hover:underline">
-              Create a free workspace
+          <div className="pt-3 border-t border-[#ECE8E3] text-center text-xs text-[#6C6782]">
+            Already have an account?{' '}
+            <Link href="/login" className="text-[#4239C4] font-bold hover:underline">
+              Sign In to Dashboard
             </Link>
           </div>
         </div>
@@ -202,10 +224,10 @@ function LoginContent() {
   );
 }
 
-export default function LoginPage() {
+export default function RegisterPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-[#0B091B]" />}>
-      <LoginContent />
+      <RegisterContent />
     </Suspense>
   );
 }
