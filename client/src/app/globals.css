@@ -1,0 +1,270 @@
+@import "tailwindcss";
+
+:root {
+  /* Marky Brand Color System derived from the official fluid logo */
+  --marky-indigo: #4239C4;
+  --marky-royal: #4A4BCF;
+  --marky-violet: #7A5DBB;
+  --marky-purple: #9B4FA5;
+  --marky-magenta: #A73B9D;
+  --marky-pink: #D97FA5;
+  --marky-coral: #F0A09F;
+  --marky-peach: #F3C5A8;
+  --marky-cream: #F7E0C4;
+
+  /* Surfaces & Canvas */
+  --marky-bg: #FCFBFA;
+  --marky-surface: #FFFFFF;
+  --marky-surface-subtle: #F7F6FA;
+  --marky-surface-tinted: #F3F1F9;
+  --marky-border: #ECE8E3;
+  --marky-border-subtle: #F3F0EC;
+  --marky-border-brand: rgba(122, 93, 187, 0.25);
+
+  /* Typography Colors */
+  --marky-text-main: #141226;
+  --marky-text-body: #3E3A52;
+  --marky-text-muted: #6C6782;
+  --marky-text-subtle: #9894AD;
+
+  /* Sidebar Dark Studio Colors */
+  --sidebar-bg: #0B091B;
+  --sidebar-surface: #131028;
+  --sidebar-border: #1C1938;
+  --sidebar-text: #F1EFFB;
+  --sidebar-text-muted: #8E8AAB;
+
+  /* Brand Gradients */
+  --marky-gradient: linear-gradient(135deg, #4239C4 0%, #7A5DBB 26%, #A73B9D 52%, #D97FA5 76%, #F3C5A8 100%);
+  --marky-gradient-hover: linear-gradient(135deg, #372EB3 0%, #6E52AD 26%, #993390 52%, #CC6F96 76%, #EAB89A 100%);
+  --marky-gradient-subtle: linear-gradient(135deg, rgba(66, 57, 196, 0.08) 0%, rgba(167, 59, 157, 0.06) 50%, rgba(243, 197, 168, 0.08) 100%);
+}
+
+body {
+  background-color: var(--marky-bg);
+  color: var(--marky-text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom polished scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(66, 57, 196, 0.15);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(66, 57, 196, 0.3);
+}
+
+/* Marky Brand Gradient Utilities */
+.bg-marky-gradient {
+  background: var(--marky-gradient);
+}
+
+.bg-marky-gradient-subtle {
+  background: var(--marky-gradient-subtle);
+}
+
+.text-marky-gradient {
+  background: var(--marky-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Marky Shadows */
+.marky-shadow-subtle {
+  box-shadow: 0 1px 3px rgba(20, 18, 38, 0.04), 0 1px 2px rgba(20, 18, 38, 0.02);
+}
+
+.marky-shadow-card {
+  box-shadow: 0 4px 20px -2px rgba(66, 57, 196, 0.05), 0 2px 6px -1px rgba(20, 18, 38, 0.03);
+}
+
+.marky-shadow-elevated {
+  box-shadow: 0 14px 34px -4px rgba(66, 57, 196, 0.12), 0 4px 12px -2px rgba(20, 18, 38, 0.04);
+}
+
+.marky-shadow-glow {
+  box-shadow: 0 8px 28px -4px rgba(122, 93, 187, 0.32);
+}
+
+/* Marky Button System */
+.marky-btn-primary {
+  background: var(--marky-gradient);
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px -2px rgba(66, 57, 196, 0.28);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.marky-btn-primary:hover {
+  background: var(--marky-gradient-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px -2px rgba(66, 57, 196, 0.38);
+}
+
+.marky-btn-primary:active {
+  transform: translateY(0);
+}
+
+.marky-btn-secondary {
+  background: #ffffff;
+  color: var(--marky-text-main);
+  border: 1px solid var(--marky-border);
+  font-weight: 500;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(20, 18, 38, 0.04);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.marky-btn-secondary:hover {
+  background: #FAF9FC;
+  border-color: rgba(66, 57, 196, 0.3);
+  color: var(--marky-indigo);
+}
+
+/* Marky Card System */
+.marky-card {
+  background: #ffffff;
+  border: 1px solid var(--marky-border);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px -2px rgba(66, 57, 196, 0.04), 0 1px 3px rgba(20, 18, 38, 0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.marky-card:hover {
+  border-color: rgba(122, 93, 187, 0.35);
+  box-shadow: 0 8px 24px -4px rgba(66, 57, 196, 0.08), 0 2px 6px -1px rgba(20, 18, 38, 0.04);
+}
+
+.marky-card-insight {
+  background: #ffffff;
+  border: 1px solid var(--marky-border);
+  border-left: 4px solid var(--marky-indigo);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px -2px rgba(66, 57, 196, 0.04);
+}
+
+/* Glassmorphic card utility with Marky tinted border */
+.card-glass {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--marky-border);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+}
+
+.card-glass:hover {
+  border-color: rgba(122, 93, 187, 0.35);
+  box-shadow: 0 6px 20px -2px rgba(66, 57, 196, 0.08);
+}
+
+/* Dark Studio Hero Banner Container */
+.marky-hero-banner {
+  background-color: #0B091B;
+  border: 1px solid #1C1938;
+  border-radius: 24px;
+  position: relative;
+  overflow: hidden;
+  color: #ffffff;
+  box-shadow: 0 20px 40px -15px rgba(11, 9, 27, 0.5);
+}
+
+/* Marky Form Inputs */
+.marky-input {
+  background-color: #FFFFFF;
+  border: 1px solid var(--marky-border);
+  border-radius: 12px;
+  color: var(--marky-text-main);
+  font-size: 0.8125rem;
+  transition: all 0.18s ease-in-out;
+}
+
+.marky-input:focus {
+  outline: none;
+  border-color: var(--marky-indigo);
+  box-shadow: 0 0 0 3px rgba(66, 57, 196, 0.12);
+}
+
+.marky-input-dark {
+  background-color: #131028;
+  border: 1px solid #1C1938;
+  border-radius: 12px;
+  color: #FFFFFF;
+  font-size: 0.8125rem;
+  transition: all 0.18s ease-in-out;
+}
+
+.marky-input-dark:focus {
+  outline: none;
+  border-color: var(--marky-violet);
+  box-shadow: 0 0 0 3px rgba(122, 93, 187, 0.25);
+}
+
+/* Marky Data Table Styles */
+.marky-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.marky-table th {
+  background-color: #F7F6FA;
+  color: var(--marky-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--marky-border);
+}
+
+.marky-table td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--marky-border-subtle);
+  color: var(--marky-text-body);
+  font-size: 0.75rem;
+  transition: background-color 0.15s ease;
+}
+
+.marky-table tr:hover td {
+  background-color: rgba(66, 57, 196, 0.02);
+}
+
+/* Keyframe Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px -4px rgba(66, 57, 196, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 32px 0px rgba(167, 59, 157, 0.45);
+  }
+}
+
+.animate-pulseGlow {
+  animation: pulseGlow 4s infinite ease-in-out;
+}
