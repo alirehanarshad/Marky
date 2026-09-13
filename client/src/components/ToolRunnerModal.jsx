@@ -16,8 +16,10 @@ import {
 } from 'lucide-react';
 import api from '../lib/api';
 import UpPromptButton from './ui/UpPromptButton';
+import Portal, { useBodyScrollLock } from './ui/Portal';
 
 export default function ToolRunnerModal({ tool, isOpen, onClose, onSavedToLibrary }) {
+  useBodyScrollLock(isOpen);
   const [formInputs, setFormInputs] = useState({});
   const [loading, setLoading] = useState(false);
   const [output, setOutput] = useState('');
@@ -164,9 +166,12 @@ export default function ToolRunnerModal({ tool, isOpen, onClose, onSavedToLibrar
     URL.revokeObjectURL(url);
   };
 
+  if (!isOpen || !tool) return null;
+
   return (
-    <div className="fixed inset-0 z-50 bg-[#0B091B]/70 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <Portal>
+      <div className="fixed inset-0 z-[99999] bg-[#0B091B]/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+        <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[85vh] sm:max-h-[88vh] flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-auto">
         
         {/* Header */}
         <div className="p-5 border-b border-[#ECE8E3] flex items-center justify-between bg-[#F7F6FA]">
@@ -442,8 +447,8 @@ export default function ToolRunnerModal({ tool, isOpen, onClose, onSavedToLibrar
           </div>
 
         </div>
-
       </div>
     </div>
-  );
+  </Portal>
+);
 }

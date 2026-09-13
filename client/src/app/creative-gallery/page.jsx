@@ -33,6 +33,7 @@ import {
 import api from '@/lib/api';
 import PageHeader from '@/components/ui/PageHeader';
 import EmptyState from '@/components/ui/EmptyState';
+import Portal, { useBodyScrollLock } from '@/components/ui/Portal';
 
 export default function CreativeGalleryPage() {
   const [assets, setAssets] = useState([]);
@@ -51,6 +52,7 @@ export default function CreativeGalleryPage() {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [copySuccessId, setCopySuccessId] = useState(null);
+  useBodyScrollLock(Boolean(uploadModalOpen || previewAsset || deleteConfirmId));
 
   // Upload Form State
   const [uploadFile, setUploadFile] = useState(null);
@@ -538,8 +540,9 @@ export default function CreativeGalleryPage() {
 
       {/* ─── MODAL 1: MEDIA UPLOAD MODAL ─── */}
       {uploadModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-[#ECE8E3] space-y-5">
+        <Portal>
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-[#ECE8E3] space-y-5 my-auto max-h-[85vh] sm:max-h-[88vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-[#ECE8E3]">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-[#4239C4]/10 text-[#4239C4] flex items-center justify-center">
@@ -681,12 +684,14 @@ export default function CreativeGalleryPage() {
             </form>
           </div>
         </div>
-      )}
+      </Portal>
+    )}
 
       {/* ─── MODAL 2: LIGHTBOX & MEDIA INSPECTOR ─── */}
       {previewAsset && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-[#141226] text-white rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl border border-white/10 flex flex-col md:flex-row max-h-[90vh]">
+        <Portal>
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="bg-[#141226] text-white rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl border border-white/10 flex flex-col md:flex-row max-h-[85vh] sm:max-h-[88vh] my-auto">
             <div className="md:w-3/5 bg-black flex items-center justify-center relative p-4 min-h-[300px]">
               {previewAsset.job_type === 'video' || previewAsset.job_type === 'assembled-video' || previewAsset.job_type === 'upload-video' ? (
                 <video
@@ -788,32 +793,35 @@ export default function CreativeGalleryPage() {
             </div>
           </div>
         </div>
-      )}
+      </Portal>
+    )}
 
       {/* ─── MODAL 3: DELETE CONFIRMATION ─── */}
       {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-[#ECE8E3] space-y-4">
-            <h4 className="text-sm font-bold text-[#141226]">Delete Creative Asset?</h4>
-            <p className="text-xs text-[#6C6782]">
-              Are you sure you want to permanently remove this asset from your creative gallery? This action cannot be undone.
-            </p>
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                onClick={() => setDeleteConfirmId(null)}
-                className="px-3 py-1.5 text-xs font-semibold text-[#6C6782] hover:bg-[#F7F6FA] rounded-lg cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDeleteAsset(deleteConfirmId)}
-                className="px-3 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm cursor-pointer"
-              >
-                Delete Permanently
-              </button>
+        <Portal>
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-[#ECE8E3] space-y-4 my-auto">
+              <h4 className="text-sm font-bold text-[#141226]">Delete Creative Asset?</h4>
+              <p className="text-xs text-[#6C6782]">
+                Are you sure you want to permanently remove this asset from your creative gallery? This action cannot be undone.
+              </p>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="px-3 py-1.5 text-xs font-semibold text-[#6C6782] hover:bg-[#F7F6FA] rounded-lg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteAsset(deleteConfirmId)}
+                  className="px-3 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm cursor-pointer"
+                >
+                  Delete Permanently
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
     </div>
   );

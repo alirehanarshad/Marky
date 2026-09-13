@@ -22,6 +22,7 @@ import {
   Check
 } from 'lucide-react';
 import api from '../lib/api';
+import Portal, { useBodyScrollLock } from './ui/Portal';
 
 export default function CompetitorAnalysisModal({
   isOpen,
@@ -30,6 +31,7 @@ export default function CompetitorAnalysisModal({
   activeJobId = null,
   onAnalysisUpdated
 }) {
+  useBodyScrollLock(isOpen);
   const [jobStatus, setJobStatus] = useState(null);
   const [loadingReport, setLoadingReport] = useState(false);
   const [currentComp, setCurrentComp] = useState(competitor);
@@ -105,8 +107,9 @@ export default function CompetitorAnalysisModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0B091B]/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
-      <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden animate-fadeIn">
+    <Portal>
+      <div className="fixed inset-0 z-[99999] bg-[#0B091B]/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-hidden">
+        <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[85vh] sm:max-h-[88vh] flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="p-5 border-b border-[#ECE8E3] flex items-center justify-between bg-[#F7F6FA]">
           <div className="flex items-center gap-3">
@@ -574,5 +577,6 @@ export default function CompetitorAnalysisModal({
         </div>
       </div>
     </div>
-  );
+  </Portal>
+);
 }

@@ -29,6 +29,7 @@ import {
   Zap
 } from 'lucide-react';
 import api from '@/lib/api';
+import Portal, { useBodyScrollLock } from './ui/Portal';
 
 export default function CampaignBlueprintModal({
   isOpen,
@@ -36,6 +37,7 @@ export default function CampaignBlueprintModal({
   campaign,
   onUpdated
 }) {
+  useBodyScrollLock(isOpen);
   const [activeTab, setActiveTab] = useState('meta'); // 'meta' | 'tiktok' | 'google' | 'seo' | 'budget' | 'export'
   const [copiedKey, setCopiedKey] = useState(null);
   const [regenerating, setRegenerating] = useState(false);
@@ -191,8 +193,9 @@ Projected Gross Revenue: ${b.budgetAndEconomics?.unitEconomics?.projectedGrossRe
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-3xl max-w-5xl w-full h-[92vh] max-h-[920px] shadow-2xl border border-[#ECE8E3] overflow-hidden flex flex-col">
+    <Portal>
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-sm overflow-hidden animate-in fade-in duration-150">
+        <div className="bg-white rounded-3xl max-w-5xl w-full h-[88vh] max-h-[880px] shadow-2xl border border-[#ECE8E3] overflow-hidden flex flex-col my-auto">
         {/* ── 1. Top Header ── */}
         <div className="p-4 sm:p-5 border-b border-[#ECE8E3] bg-[#141226] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
           <div className="space-y-1">
@@ -986,5 +989,6 @@ Projected Gross Revenue: ${b.budgetAndEconomics?.unitEconomics?.projectedGrossRe
         </div>
       </div>
     </div>
-  );
+  </Portal>
+);
 }

@@ -41,6 +41,7 @@ import api from '@/lib/api';
 import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
+import Portal, { useBodyScrollLock } from '@/components/ui/Portal';
 
 const CONTENT_TYPES = [
   'All Types',
@@ -283,6 +284,7 @@ export default function ContentLibraryPage() {
 
   // Content Idea Studio Modal State
   const [showIdeaModal, setShowIdeaModal] = useState(false);
+  useBodyScrollLock(Boolean(showIdeaModal || previewItem));
   const [seedConcept, setSeedConcept] = useState('');
   const [ideaFormat, setIdeaFormat] = useState(IDEA_FORMATS[0]);
   const [ideaAngle, setIdeaAngle] = useState(IDEA_ANGLES[0]);
@@ -887,8 +889,9 @@ export default function ContentLibraryPage() {
 
       {/* 4. Interactive "Generate New Content Idea" Studio Modal */}
       {showIdeaModal && (
-        <div className="fixed inset-0 z-50 bg-[#0B091B]/80 backdrop-blur-xs flex items-center justify-center p-3 md:p-6 animate-fadeIn">
-          <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden">
+        <Portal>
+          <div className="fixed inset-0 z-[99999] bg-[#0B091B]/80 backdrop-blur-sm flex items-center justify-center p-3 md:p-6 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[85vh] sm:max-h-[88vh] flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden my-auto">
             {/* Modal Header */}
             <div className="p-5 border-b border-[#ECE8E3] flex items-center justify-between bg-[#F7F6FA]">
               <div className="flex items-center gap-3">
@@ -1211,16 +1214,18 @@ export default function ContentLibraryPage() {
             </div>
           </div>
         </div>
-      )}
+      </Portal>
+    )}
 
       {/* 5. Full Detail Document Dossier Inspector Modal */}
       {previewItem && (
-        <div className="fixed inset-0 z-50 bg-[#0B091B]/75 backdrop-blur-xs flex items-center justify-center p-3 md:p-6 animate-fadeIn">
-          <div
-            className={`bg-white rounded-3xl w-full flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden transition-all duration-200 ${
-              isFullScreen ? 'max-w-7xl h-[96vh]' : 'max-w-4xl h-[88vh]'
-            }`}
-          >
+        <Portal>
+          <div className="fixed inset-0 z-[99999] bg-[#0B091B]/80 backdrop-blur-sm flex items-center justify-center p-3 md:p-6 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div
+              className={`bg-white rounded-3xl w-full flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden transition-all duration-200 my-auto ${
+                isFullScreen ? 'max-w-7xl h-[92vh]' : 'max-w-4xl h-[85vh] sm:h-[88vh]'
+              }`}
+            >
             {/* Modal Header */}
             <div className="p-5 md:px-6 border-b border-[#ECE8E3] flex items-center justify-between bg-[#F7F6FA]">
               <div className="flex items-center gap-3">
@@ -1506,7 +1511,8 @@ export default function ContentLibraryPage() {
             </div>
           </div>
         </div>
-      )}
-    </div>
-  );
+      </Portal>
+    )}
+  </div>
+);
 }

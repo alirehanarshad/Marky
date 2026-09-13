@@ -29,6 +29,7 @@ import {
 import api from '@/lib/api';
 import SoundWaveVisualizer from '@/components/SoundWaveVisualizer';
 import UpPromptButton from '@/components/ui/UpPromptButton';
+import Portal, { useBodyScrollLock } from '@/components/ui/Portal';
 import {
   getInitialMarkyMessages,
   saveMarkyMessages,
@@ -124,6 +125,7 @@ export default function AIChatPage() {
   const [audioStream, setAudioStream] = useState(null);
   const [activeSpeakingIdx, setActiveSpeakingIdx] = useState(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  useBodyScrollLock(showClearConfirm);
   const [activeBrandName, setActiveBrandName] = useState('');
   const [isTranscribing, setIsTranscribing] = useState(false);
 
@@ -868,36 +870,38 @@ export default function AIChatPage() {
       {/* 4. CLEAR CHAT CONFIRMATION MODAL                                          */}
       {/* ========================================================================= */}
       {showClearConfirm && (
-        <div className="fixed inset-0 z-50 bg-[#0B091B]/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-[#ECE8E3] space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
-                <Trash2 className="w-5 h-5" />
+        <Portal>
+          <div className="fixed inset-0 z-[99999] bg-[#0B091B]/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-[#ECE8E3] space-y-4 my-auto">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-[#141226]">Clear this conversation?</h4>
+                  <p className="text-xs text-[#6C6782] mt-0.5">Your current strategic chat session will be wiped.</p>
+                </div>
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-[#141226]">Clear this conversation?</h4>
-                <p className="text-xs text-[#6C6782] mt-0.5">Your current strategic chat session will be wiped.</p>
-              </div>
-            </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowClearConfirm(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-[#6C6782] hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleClearChat}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-xs transition-colors cursor-pointer"
-              >
-                Clear chat
-              </button>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowClearConfirm(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#6C6782] hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearChat}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-xs transition-colors cursor-pointer"
+                >
+                  Clear chat
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
 
     </div>

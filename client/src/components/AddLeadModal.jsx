@@ -3,8 +3,10 @@
 import React, { useState } from 'react';
 import { X, Users } from 'lucide-react';
 import api from '../lib/api';
+import Portal, { useBodyScrollLock } from './ui/Portal';
 
 export default function AddLeadModal({ isOpen, onClose, onCreated }) {
+  useBodyScrollLock(isOpen);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -42,24 +44,25 @@ export default function AddLeadModal({ isOpen, onClose, onCreated }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0B091B]/70 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-[#ECE8E3] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        <div className="p-5 border-b border-[#ECE8E3] flex items-center justify-between bg-[#F7F6FA]">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4239C4] to-[#7A5DBB] text-white flex items-center justify-center shadow-xs">
-              <Users className="w-4 h-4" />
+    <Portal>
+      <div className="fixed inset-0 z-[99999] bg-[#0B091B]/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+        <div className="bg-white rounded-3xl max-w-md w-full max-h-[85vh] sm:max-h-[88vh] flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
+          <div className="p-5 border-b border-[#ECE8E3] flex items-center justify-between bg-[#F7F6FA] shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4239C4] to-[#7A5DBB] text-white flex items-center justify-center shadow-xs">
+                <Users className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-[#141226]">Add CRM Lead / Partner</h3>
+                <p className="text-[11px] text-[#6C6782]">Record B2B client, wholesale buyer, or vendor</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-extrabold text-[#141226]">Add CRM Lead / Partner</h3>
-              <p className="text-[11px] text-[#6C6782]">Record B2B client, wholesale buyer, or vendor</p>
-            </div>
+            <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-200/50 transition-colors cursor-pointer">
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-200/50 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="p-6 space-y-4 flex-1 overflow-y-auto">
           {error && <div className="p-3 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200 font-medium">{error}</div>}
 
           <div>
@@ -164,5 +167,6 @@ export default function AddLeadModal({ isOpen, onClose, onCreated }) {
         </form>
       </div>
     </div>
-  );
+  </Portal>
+);
 }

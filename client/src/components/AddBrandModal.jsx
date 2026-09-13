@@ -3,8 +3,10 @@
 import React, { useState } from 'react';
 import { X, Briefcase, Plus, Sparkles } from 'lucide-react';
 import api from '../lib/api';
+import Portal, { useBodyScrollLock } from './ui/Portal';
 
 export default function AddBrandModal({ isOpen, onClose, onCreated }) {
+  useBodyScrollLock(isOpen);
   const [formData, setFormData] = useState({
     name: '',
     company_name: '',
@@ -56,8 +58,9 @@ export default function AddBrandModal({ isOpen, onClose, onCreated }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0B091B]/70 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <Portal>
+      <div className="fixed inset-0 z-[99999] bg-[#0B091B]/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+        <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] sm:max-h-[88vh] flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-auto">
         <div className="p-5 border-b border-[#ECE8E3] flex items-center justify-between bg-[#F7F6FA]">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4239C4] to-[#7A5DBB] text-white flex items-center justify-center shadow-xs">
@@ -348,5 +351,6 @@ export default function AddBrandModal({ isOpen, onClose, onCreated }) {
         </form>
       </div>
     </div>
-  );
+  </Portal>
+);
 }

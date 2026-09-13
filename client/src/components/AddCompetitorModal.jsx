@@ -3,8 +3,10 @@
 import React, { useState } from 'react';
 import { X, ShieldAlert, Sparkles, Globe, Compass } from 'lucide-react';
 import api from '../lib/api';
+import Portal, { useBodyScrollLock } from './ui/Portal';
 
 export default function AddCompetitorModal({ isOpen, onClose, onCreated }) {
+  useBodyScrollLock(isOpen);
   const [formData, setFormData] = useState({
     name: '',
     url: '',
@@ -42,10 +44,11 @@ export default function AddCompetitorModal({ isOpen, onClose, onCreated }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0B091B]/70 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-[#ECE8E3] overflow-hidden animate-fadeIn">
-        {/* Header */}
-        <div className="p-5 border-b border-[#ECE8E3] flex items-center justify-between bg-[#F7F6FA]">
+    <Portal>
+      <div className="fixed inset-0 z-[99999] bg-[#0B091B]/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+        <div className="bg-white rounded-3xl max-w-md w-full max-h-[85vh] sm:max-h-[88vh] flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
+          {/* Header */}
+          <div className="p-5 border-b border-[#ECE8E3] flex items-center justify-between bg-[#F7F6FA] shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4239C4] to-[#7A5DBB] text-white flex items-center justify-center shadow-xs">
               <ShieldAlert className="w-4 h-4" />
@@ -64,7 +67,7 @@ export default function AddCompetitorModal({ isOpen, onClose, onCreated }) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 flex-1 overflow-y-auto">
           {error && (
             <div className="p-3 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200 font-medium leading-relaxed">
               {error}
@@ -150,5 +153,6 @@ export default function AddCompetitorModal({ isOpen, onClose, onCreated }) {
         </form>
       </div>
     </div>
-  );
+  </Portal>
+);
 }

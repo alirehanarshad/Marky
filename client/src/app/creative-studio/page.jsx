@@ -31,6 +31,7 @@ import {
 import api from '@/lib/api';
 import PageHeader from '@/components/ui/PageHeader';
 import UpPromptButton from '@/components/ui/UpPromptButton';
+import Portal, { useBodyScrollLock } from '@/components/ui/Portal';
 
 export default function CreativeStudioPage() {
   const [activeTab, setActiveTab] = useState('image-gen'); // 'image-gen' | 'image-edit' | 'ugc-creator' | 'video-assembler' | 'gallery' | 'history'
@@ -47,6 +48,7 @@ export default function CreativeStudioPage() {
   // ── History State ──
   const [historyFilter, setHistoryFilter] = useState('all'); // 'all' | 'image' | 'video' | 'edit'
   const [historyPreview, setHistoryPreview] = useState(null);
+  useBodyScrollLock(Boolean(confirmDialog || historyPreview || galleryPreview));
 
   // ── Asset Upload State ──
   const [uploadedAssets, setUploadedAssets] = useState([]);
@@ -1692,132 +1694,136 @@ export default function CreativeStudioPage() {
 
       {/* History Preview Modal */}
       {historyPreview && (
-        <div className="fixed inset-0 z-50 bg-[#0B091B]/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 space-y-4 shadow-2xl border border-[#ECE8E3] animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white ${
-                  historyPreview.job_type === 'video' ? 'bg-purple-500' : 'bg-[#4239C4]'
-                }`}>
-                  {historyPreview.job_type === 'video' ? <Film className="w-4 h-4" /> : <ImageIcon className="w-4 h-4" />}
+        <Portal>
+          <div className="fixed inset-0 z-[99999] bg-[#0B091B]/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+            <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] sm:max-h-[88vh] overflow-y-auto p-6 space-y-4 shadow-2xl border border-[#ECE8E3] animate-in fade-in zoom-in-95 my-auto">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white ${
+                    historyPreview.job_type === 'video' ? 'bg-purple-500' : 'bg-[#4239C4]'
+                  }`}>
+                    {historyPreview.job_type === 'video' ? <Film className="w-4 h-4" /> : <ImageIcon className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-[#141226]">Generation Details</h3>
+                    <p className="text-[10px] text-[#6C6782]">{historyPreview.provider} • {historyPreview.credits_deducted} credits</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-extrabold text-[#141226]">Generation Details</h3>
-                  <p className="text-[10px] text-[#6C6782]">{historyPreview.provider} • {historyPreview.credits_deducted} credits</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setHistoryPreview(null)}
-                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Preview Image */}
-            <div className="rounded-2xl overflow-hidden border border-[#ECE8E3] bg-black/5 max-h-[400px] flex items-center justify-center">
-              {historyPreview.job_type === 'video' ? (
-                <div className="w-full h-64 bg-slate-900 flex items-center justify-center">
-                  <a href={historyPreview.video_url || historyPreview.result_url} target="_blank" rel="noopener noreferrer" className="text-white flex flex-col items-center gap-2">
-                    <Play className="w-12 h-12" />
-                    <span className="text-xs font-bold">Open Video</span>
-                  </a>
-                </div>
-              ) : (
-                <img
-                  src={historyPreview.result_url}
-                  alt="Preview"
-                  className="w-full h-full object-contain max-h-[400px]"
-                />
-              )}
-            </div>
-
-            {/* Prompt Used */}
-            {historyPreview.prompt && (
-              <div className="p-3 rounded-xl bg-[#F7F6FA] border border-[#ECE8E3]">
-                <p className="text-[10px] font-bold text-[#6C6782] uppercase mb-1">Prompt Used</p>
-                <p className="text-xs text-[#141226] leading-relaxed">{historyPreview.prompt}</p>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex items-center justify-between pt-2">
-              <span className="text-xs text-[#6C6782]">
-                {historyPreview.created_at ? new Date(historyPreview.created_at).toLocaleString() : 'Generated recently'}
-              </span>
-              <div className="flex items-center gap-2">
-                <a
-                  href={historyPreview.result_url || historyPreview.video_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 text-xs font-bold bg-[#F7F6FA] hover:bg-white text-[#141226] border border-[#ECE8E3] rounded-lg flex items-center gap-1.5"
+                <button
+                  onClick={() => setHistoryPreview(null)}
+                  className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
                 >
-                  <Download className="w-3.5 h-3.5" /> Download
-                </a>
-                {historyPreview.job_type !== 'video' && (
-                  <button
-                    onClick={() => {
-                      setEditImageUrl(historyPreview.result_url);
-                      setActiveTab('image-edit');
-                      setHistoryPreview(null);
-                    }}
-                    className="px-3 py-1.5 text-xs font-bold bg-[#4239C4] text-white rounded-lg flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Edit className="w-3.5 h-3.5" /> Edit in AI Studio
-                  </button>
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Preview Image */}
+              <div className="rounded-2xl overflow-hidden border border-[#ECE8E3] bg-black/5 max-h-[400px] flex items-center justify-center">
+                {historyPreview.job_type === 'video' ? (
+                  <div className="w-full h-64 bg-slate-900 flex items-center justify-center">
+                    <a href={historyPreview.video_url || historyPreview.result_url} target="_blank" rel="noopener noreferrer" className="text-white flex flex-col items-center gap-2">
+                      <Play className="w-12 h-12" />
+                      <span className="text-xs font-bold">Open Video</span>
+                    </a>
+                  </div>
+                ) : (
+                  <img
+                    src={historyPreview.result_url}
+                    alt="Preview"
+                    className="w-full h-full object-contain max-h-[400px]"
+                  />
                 )}
+              </div>
+
+              {/* Prompt Used */}
+              {historyPreview.prompt && (
+                <div className="p-3 rounded-xl bg-[#F7F6FA] border border-[#ECE8E3]">
+                  <p className="text-[10px] font-bold text-[#6C6782] uppercase mb-1">Prompt Used</p>
+                  <p className="text-xs text-[#141226] leading-relaxed">{historyPreview.prompt}</p>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-xs text-[#6C6782]">
+                  {historyPreview.created_at ? new Date(historyPreview.created_at).toLocaleString() : 'Generated recently'}
+                </span>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={historyPreview.result_url || historyPreview.video_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 text-xs font-bold bg-[#F7F6FA] hover:bg-white text-[#141226] border border-[#ECE8E3] rounded-lg flex items-center gap-1.5"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Download
+                  </a>
+                  {historyPreview.job_type !== 'video' && (
+                    <button
+                      onClick={() => {
+                        setEditImageUrl(historyPreview.result_url);
+                        setActiveTab('image-edit');
+                        setHistoryPreview(null);
+                      }}
+                      className="px-3 py-1.5 text-xs font-bold bg-[#4239C4] text-white rounded-lg flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Edit className="w-3.5 h-3.5" /> Edit in AI Studio
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
 
       {/* Credit Confirmation Modal for High-Cost Actions */}
       {confirmDialog && (
-        <div className="fixed inset-0 z-50 bg-[#0B091B]/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#ECE8E3] animate-in fade-in zoom-in-95">
-            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
-              <Coins className="w-6 h-6" />
-            </div>
-
-            <div className="text-center space-y-1.5">
-              <h3 className="text-base font-extrabold text-[#141226]">{confirmDialog.title}</h3>
-              <p className="text-xs text-[#6C6782]">
-                This creative generation will deduct <strong>{confirmDialog.cost} credits</strong> from your MARKY balance.
-              </p>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#F7F6FA] border border-[#ECE8E3] text-xs space-y-1">
-              <div className="flex justify-between text-[#6C6782]">
-                <span>Current balance:</span>
-                <span className="font-bold text-[#141226]">{credits} credits</span>
+        <Portal>
+          <div className="fixed inset-0 z-[99999] bg-[#0B091B]/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#ECE8E3] animate-in fade-in zoom-in-95 my-auto max-h-[85vh] sm:max-h-[88vh] overflow-y-auto">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
+                <Coins className="w-6 h-6" />
               </div>
-              <div className="flex justify-between text-[#6C6782]">
-                <span>Estimated cost:</span>
-                <span className="font-bold text-red-600">-{confirmDialog.cost} credits</span>
-              </div>
-              <div className="flex justify-between text-[#6C6782] pt-1 border-t border-[#ECE8E3]">
-                <span>Remaining after:</span>
-                <span className="font-bold text-[#4239C4]">{credits - confirmDialog.cost} credits</span>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <button
-                onClick={() => setConfirmDialog(null)}
-                className="py-2.5 px-4 rounded-xl border border-[#ECE8E3] text-xs font-bold text-[#6C6782] hover:bg-[#F7F6FA]"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDialog.onConfirm}
-                className="py-2.5 px-4 rounded-xl bg-[#4239C4] hover:bg-[#372EB3] text-white text-xs font-bold shadow-md shadow-indigo-900/20"
-              >
-                Confirm & Generate
-              </button>
+              <div className="text-center space-y-1.5">
+                <h3 className="text-base font-extrabold text-[#141226]">{confirmDialog.title}</h3>
+                <p className="text-xs text-[#6C6782]">
+                  This creative generation will deduct <strong>{confirmDialog.cost} credits</strong> from your MARKY balance.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-[#F7F6FA] border border-[#ECE8E3] text-xs space-y-1">
+                <div className="flex justify-between text-[#6C6782]">
+                  <span>Current balance:</span>
+                  <span className="font-bold text-[#141226]">{credits} credits</span>
+                </div>
+                <div className="flex justify-between text-[#6C6782]">
+                  <span>Estimated cost:</span>
+                  <span className="font-bold text-red-600">-{confirmDialog.cost} credits</span>
+                </div>
+                <div className="flex justify-between text-[#6C6782] pt-1 border-t border-[#ECE8E3]">
+                  <span>Remaining after:</span>
+                  <span className="font-bold text-[#4239C4]">{credits - confirmDialog.cost} credits</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button
+                  onClick={() => setConfirmDialog(null)}
+                  className="py-2.5 px-4 rounded-xl border border-[#ECE8E3] text-xs font-bold text-[#6C6782] hover:bg-[#F7F6FA]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDialog.onConfirm}
+                  className="py-2.5 px-4 rounded-xl bg-[#4239C4] hover:bg-[#372EB3] text-white text-xs font-bold shadow-md shadow-indigo-900/20"
+                >
+                  Confirm & Generate
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
     </div>
   );

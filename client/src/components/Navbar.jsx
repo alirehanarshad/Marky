@@ -13,12 +13,14 @@ import {
   Cpu
 } from 'lucide-react';
 import api from '../lib/api';
+import Portal, { useBodyScrollLock } from './ui/Portal';
 
 export default function Navbar({ onOpenAddBrand, onOpenAddCampaign }) {
   const [brands, setBrands] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState('All Brands');
   const [aiStatus, setAiStatus] = useState({ configured: false, mode: 'Local Engine' });
   const [showKeyModal, setShowKeyModal] = useState(false);
+  useBodyScrollLock(showKeyModal);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [savingKey, setSavingKey] = useState(false);
   const [keyFeedback, setKeyFeedback] = useState('');
@@ -170,8 +172,9 @@ export default function Navbar({ onOpenAddBrand, onOpenAddCampaign }) {
 
       {/* Gemini API Key Configuration Modal */}
       {showKeyModal && (
-        <div className="fixed inset-0 z-50 bg-[#0B091B]/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-[#ECE8E3] overflow-hidden">
+        <Portal>
+          <div className="fixed inset-0 z-[99999] bg-[#0B091B]/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+            <div className="bg-white rounded-2xl max-w-md w-full max-h-[85vh] sm:max-h-[88vh] flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
             <div className="p-5 border-b border-[#ECE8E3] flex items-center justify-between bg-[#F7F6FA]">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-[#4239C4]/10 text-[#4239C4] flex items-center justify-center">
@@ -255,7 +258,8 @@ export default function Navbar({ onOpenAddBrand, onOpenAddCampaign }) {
             </form>
           </div>
         </div>
-      )}
-    </>
-  );
+      </Portal>
+    )}
+  </>
+);
 }

@@ -28,6 +28,7 @@ import api from '@/lib/api';
 import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
+import Portal, { useBodyScrollLock } from '@/components/ui/Portal';
 
 const PRESET_CITIES = ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Faisalabad', 'Multan', 'Peshawar'];
 const PRESET_CATEGORIES = ['Clothing stores', 'Organic Honey', 'Leather Goods', 'Bridal Boutiques', 'Beauty & Skincare', 'Pharmacies'];
@@ -48,6 +49,7 @@ const DATA_FIELDS = [
 export default function MapScrapersPage() {
   // Scraper Form State
   const [showConfigModal, setShowConfigModal] = useState(false);
+  useBodyScrollLock(showConfigModal);
   const [searchQuery, setSearchQuery] = useState('Clothing stores');
   const [location, setLocation] = useState('Islamabad');
   const [maxResults, setMaxResults] = useState(25);
@@ -454,29 +456,30 @@ export default function MapScrapersPage() {
 
       {/* 6. Configuration Modal */}
       {showConfigModal && (
-        <div className="fixed inset-0 z-50 bg-[#0B091B]/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-[#ECE8E3] overflow-hidden animate-fadeIn">
-            {/* Modal Header */}
-            <div className="p-5 border-b border-[#ECE8E3] flex items-center justify-between bg-[#F7F6FA]">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-600 to-[#4239C4] text-white flex items-center justify-center shadow-xs">
-                  <MapPin className="w-4 h-4" />
+        <Portal>
+          <div className="fixed inset-0 z-[99999] bg-[#0B091B]/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+            <div className="bg-white rounded-3xl max-w-lg w-full max-h-[85vh] sm:max-h-[88vh] flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
+              {/* Modal Header */}
+              <div className="p-5 border-b border-[#ECE8E3] flex items-center justify-between bg-[#F7F6FA] shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-600 to-[#4239C4] text-white flex items-center justify-center shadow-xs">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-[#141226]">Configure Google Maps Scraper</h3>
+                    <p className="text-[11px] text-[#6C6782]">Asynchronous Apify crawler configuration</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-extrabold text-[#141226]">Configure Google Maps Scraper</h3>
-                  <p className="text-[11px] text-[#6C6782]">Asynchronous Apify crawler configuration</p>
-                </div>
+                <button
+                  onClick={() => setShowConfigModal(false)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-200/50 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                onClick={() => setShowConfigModal(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-200/50 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            {/* Modal Form */}
-            <form onSubmit={handleStartScrape} className="p-6 space-y-4 text-xs">
+              {/* Modal Form */}
+              <form onSubmit={handleStartScrape} className="p-6 space-y-4 text-xs flex-1 overflow-y-auto">
               {/* Search Query */}
               <div>
                 <label className="block font-bold text-slate-700 mb-1.5">
@@ -603,7 +606,8 @@ export default function MapScrapersPage() {
             </form>
           </div>
         </div>
-      )}
-    </div>
-  );
+      </Portal>
+    )}
+  </div>
+);
 }

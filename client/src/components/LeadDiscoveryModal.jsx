@@ -19,6 +19,7 @@ import {
   Cpu
 } from 'lucide-react';
 import api from '@/lib/api';
+import Portal, { useBodyScrollLock } from './ui/Portal';
 
 const ACTOR_OPTIONS = [
   {
@@ -50,6 +51,7 @@ export default function LeadDiscoveryModal({
   pipeline,
   onLeadsDiscovered
 }) {
+  useBodyScrollLock(isOpen);
   const [selectedActor, setSelectedActor] = useState('compass/crawler-google-places');
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('Lahore');
@@ -151,8 +153,9 @@ export default function LeadDiscoveryModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-[#ECE8E3] overflow-hidden flex flex-col max-h-[92vh]">
+    <Portal>
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-[#ECE8E3] overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[88vh] my-auto">
         {/* Header Ribbon */}
         <div className="px-8 py-5 bg-gradient-to-r from-[#141226] via-[#1E1B4B] to-[#4239C4] text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -393,5 +396,6 @@ export default function LeadDiscoveryModal({
         </div>
       </div>
     </div>
-  );
+  </Portal>
+);
 }

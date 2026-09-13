@@ -40,6 +40,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import MetricCard from '@/components/ui/MetricCard';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Tabs from '@/components/ui/Tabs';
+import Portal, { useBodyScrollLock } from '@/components/ui/Portal';
 
 export default function SettingsPage() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -49,6 +50,7 @@ export default function SettingsPage() {
 
   // Switch / Auth State
   const [showAuthModal, setShowAuthModal] = useState(false);
+  useBodyScrollLock(showAuthModal);
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
@@ -1089,83 +1091,85 @@ export default function SettingsPage() {
 
       {/* Auth Modal for switching accounts or logging in */}
       {showAuthModal && (
-        <div className="fixed inset-0 z-50 bg-[#0B091B]/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-[#ECE8E3] overflow-hidden p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-[#141226]">
-                {authMode === 'login' ? 'Sign In to Marky' : 'Create New Account'}
-              </h3>
-              <button
-                onClick={() => setShowAuthModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            {authError && (
-              <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl font-semibold">
-                {authError}
+        <Portal>
+          <div className="fixed inset-0 z-[99999] bg-[#0B091B]/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-[#ECE8E3] overflow-hidden p-6 space-y-4 my-auto max-h-[85vh] sm:max-h-[88vh] overflow-y-auto">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-[#141226]">
+                  {authMode === 'login' ? 'Sign In to Marky' : 'Create New Account'}
+                </h3>
+                <button
+                  onClick={() => setShowAuthModal(false)}
+                  className="text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer p-1 rounded-lg hover:bg-slate-100"
+                >
+                  ✕
+                </button>
               </div>
-            )}
 
-            <form onSubmit={handleAuthSubmit} className="space-y-3">
-              {authMode === 'register' && (
-                <div>
-                  <label className="block text-[11px] font-bold text-[#141226] mb-1">Full Name</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Jane Doe"
-                    value={authName}
-                    onChange={(e) => setAuthName(e.target.value)}
-                    className="w-full bg-[#F7F6FA] border border-[#ECE8E3] rounded-xl px-3 py-2 text-xs text-[#141226] focus:outline-hidden focus:border-[#4239C4]"
-                  />
+              {authError && (
+                <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl font-semibold">
+                  {authError}
                 </div>
               )}
 
-              <div>
-                <label className="block text-[11px] font-bold text-[#141226] mb-1">Email</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="user@marky.ai"
-                  value={authEmail}
-                  onChange={(e) => setAuthEmail(e.target.value)}
-                  className="w-full bg-[#F7F6FA] border border-[#ECE8E3] rounded-xl px-3 py-2 text-xs text-[#141226] focus:outline-hidden focus:border-[#4239C4]"
-                />
+              <form onSubmit={handleAuthSubmit} className="space-y-3">
+                {authMode === 'register' && (
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#141226] mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Jane Doe"
+                      value={authName}
+                      onChange={(e) => setAuthName(e.target.value)}
+                      className="w-full bg-[#F7F6FA] border border-[#ECE8E3] rounded-xl px-3 py-2 text-xs text-[#141226] focus:outline-hidden focus:border-[#4239C4]"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-[11px] font-bold text-[#141226] mb-1">Email</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="user@marky.ai"
+                    value={authEmail}
+                    onChange={(e) => setAuthEmail(e.target.value)}
+                    className="w-full bg-[#F7F6FA] border border-[#ECE8E3] rounded-xl px-3 py-2 text-xs text-[#141226] focus:outline-hidden focus:border-[#4239C4]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-[#141226] mb-1">Password</label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="••••••••"
+                    value={authPassword}
+                    onChange={(e) => setAuthPassword(e.target.value)}
+                    className="w-full bg-[#F7F6FA] border border-[#ECE8E3] rounded-xl px-3 py-2 text-xs text-[#141226] focus:outline-hidden focus:border-[#4239C4]"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={authSubmitting}
+                  className="w-full marky-btn-primary py-2 text-xs font-bold cursor-pointer disabled:opacity-50"
+                >
+                  {authSubmitting ? 'Verifying...' : authMode === 'login' ? 'Sign In' : 'Create Account'}
+                </button>
+              </form>
+
+              <div className="text-center pt-2 text-xs text-[#6C6782]">
+                {authMode === 'login' ? (
+                  <span>Need an account? <button onClick={() => { setAuthMode('register'); setAuthError(''); }} className="text-[#4239C4] font-bold underline cursor-pointer">Register (User Role)</button></span>
+                ) : (
+                  <span>Have an account? <button onClick={() => { setAuthMode('login'); setAuthError(''); }} className="text-[#4239C4] font-bold underline cursor-pointer">Sign In</button></span>
+                )}
               </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-[#141226] mb-1">Password</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={authPassword}
-                  onChange={(e) => setAuthPassword(e.target.value)}
-                  className="w-full bg-[#F7F6FA] border border-[#ECE8E3] rounded-xl px-3 py-2 text-xs text-[#141226] focus:outline-hidden focus:border-[#4239C4]"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={authSubmitting}
-                className="w-full marky-btn-primary py-2 text-xs font-bold cursor-pointer disabled:opacity-50"
-              >
-                {authSubmitting ? 'Verifying...' : authMode === 'login' ? 'Sign In' : 'Create Account'}
-              </button>
-            </form>
-
-            <div className="text-center pt-2 text-xs text-[#6C6782]">
-              {authMode === 'login' ? (
-                <span>Need an account? <button onClick={() => { setAuthMode('register'); setAuthError(''); }} className="text-[#4239C4] font-bold underline cursor-pointer">Register (User Role)</button></span>
-              ) : (
-                <span>Have an account? <button onClick={() => { setAuthMode('login'); setAuthError(''); }} className="text-[#4239C4] font-bold underline cursor-pointer">Sign In</button></span>
-              )}
             </div>
           </div>
-        </div>
+        </Portal>
       )}
     </div>
   );

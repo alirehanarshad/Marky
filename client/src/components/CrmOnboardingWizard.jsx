@@ -20,6 +20,7 @@ import {
   Trash2
 } from 'lucide-react';
 import api from '@/lib/api';
+import Portal, { useBodyScrollLock } from './ui/Portal';
 
 const BUSINESS_PRESETS = [
   {
@@ -67,9 +68,12 @@ const BUSINESS_PRESETS = [
 ];
 
 export default function CrmOnboardingWizard({ isOpen, onClose, onCreated, brandId = 1 }) {
+  useBodyScrollLock(isOpen);
   const [step, setStep] = useState(1); // 1: Business Profile, 2: ICP & Strategy, 3: AI Review & Launch
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  if (!isOpen) return null;
 
   // Form Inputs
   const [businessType, setBusinessType] = useState('E-commerce & Wholesale');
@@ -181,8 +185,9 @@ export default function CrmOnboardingWizard({ isOpen, onClose, onCreated, brandI
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-[#ECE8E3] overflow-hidden flex flex-col max-h-[90vh]">
+    <Portal>
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-md overflow-hidden animate-in fade-in duration-150">
+        <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-[#ECE8E3] overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[88vh] my-auto">
         {/* Header Ribbon */}
         <div className="px-8 py-5 bg-gradient-to-r from-[#141226] via-[#2A1E5C] to-[#4239C4] text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -638,5 +643,6 @@ export default function CrmOnboardingWizard({ isOpen, onClose, onCreated, brandI
         </div>
       </div>
     </div>
-  );
+  </Portal>
+);
 }

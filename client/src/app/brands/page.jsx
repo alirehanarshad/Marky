@@ -32,6 +32,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Tabs from '@/components/ui/Tabs';
 import EmptyState from '@/components/ui/EmptyState';
+import Portal, { useBodyScrollLock } from '@/components/ui/Portal';
 
 export default function BrandsPage() {
   const [brands, setBrands] = useState([]);
@@ -43,6 +44,7 @@ export default function BrandsPage() {
   const [filterTab, setFilterTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrandProfile, setSelectedBrandProfile] = useState(null);
+  useBodyScrollLock(Boolean(selectedBrandProfile || showAddModal));
   const [profileTab, setProfileTab] = useState('overview');
 
   useEffect(() => {
@@ -313,8 +315,9 @@ export default function BrandsPage() {
 
       {/* 4. Interactive Brand Profile Drawer / Modal */}
       {selectedBrandProfile && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden animate-fadeIn">
+        <Portal>
+          <div className="fixed inset-0 z-[99999] bg-[#0B091B]/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+            <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[85vh] sm:max-h-[88vh] flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
             {/* Drawer Header */}
             <div className="p-6 border-b border-[#ECE8E3] flex items-center justify-between bg-[#F7F6FA]">
               <div className="flex items-center gap-3">
@@ -482,7 +485,8 @@ export default function BrandsPage() {
             </div>
           </div>
         </div>
-      )}
+      </Portal>
+    )}
 
       {/* Add Brand Modal */}
       <AddBrandModal

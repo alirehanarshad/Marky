@@ -26,6 +26,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Tabs from '@/components/ui/Tabs';
 import EmptyState from '@/components/ui/EmptyState';
+import Portal, { useBodyScrollLock } from '@/components/ui/Portal';
 
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState([]);
@@ -36,6 +37,7 @@ export default function AuditLogsPage() {
   const [viewMode, setViewMode] = useState('timeline'); // 'timeline' | 'table'
   const [loading, setLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState(null);
+  useBodyScrollLock(Boolean(selectedLog));
 
   useEffect(() => {
     loadLogs();
@@ -309,8 +311,9 @@ export default function AuditLogsPage() {
 
       {/* 4. Log Detail Inspector Modal */}
       {selectedLog && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden animate-fadeIn">
+        <Portal>
+          <div className="fixed inset-0 z-[99999] bg-[#0B091B]/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+            <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] sm:max-h-[88vh] flex flex-col shadow-2xl border border-[#ECE8E3] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
             <div className="p-5 border-b border-[#ECE8E3] flex items-center justify-between bg-[#F7F6FA]">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-[#4239C4]/10 text-[#4239C4] flex items-center justify-center font-bold">
@@ -367,7 +370,8 @@ export default function AuditLogsPage() {
             </div>
           </div>
         </div>
-      )}
-    </div>
-  );
+      </Portal>
+    )}
+  </div>
+);
 }

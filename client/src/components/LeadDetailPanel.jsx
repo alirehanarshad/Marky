@@ -28,6 +28,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import api from '@/lib/api';
+import Portal, { useBodyScrollLock } from './ui/Portal';
 
 export default function LeadDetailPanel({
   lead,
@@ -36,6 +37,7 @@ export default function LeadDetailPanel({
   onClose,
   onLeadUpdated
 }) {
+  useBodyScrollLock(isOpen);
   const [activeTab, setActiveTab] = useState('ai_intel'); // 'ai_intel' | 'outreach' | 'tasks' | 'activities'
   const [currentLead, setCurrentLead] = useState(lead);
   const [loadingAction, setLoadingAction] = useState(false);
@@ -262,14 +264,15 @@ export default function LeadDetailPanel({
   } catch (e) {}
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md animate-fadeIn"
-      onClick={onClose}
-    >
+    <Portal>
       <div
-        className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-[#ECE8E3] overflow-hidden flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-md overflow-hidden animate-in fade-in duration-150"
+        onClick={onClose}
       >
+        <div
+          className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-[#ECE8E3] overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[88vh] my-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Header Ribbon */}
         <div className="px-6 py-5 border-b border-[#ECE8E3] bg-[#FDFCFB] flex items-start justify-between">
           <div className="flex-1 pr-4">
@@ -760,5 +763,6 @@ export default function LeadDetailPanel({
         </div>
       </div>
     </div>
-  );
+  </Portal>
+);
 }

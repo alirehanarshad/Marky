@@ -8,6 +8,7 @@ import {
   BookmarkCheck, Globe, ChevronRight, Activity
 } from 'lucide-react';
 import api from '@/lib/api';
+import Portal, { useBodyScrollLock } from './ui/Portal';
 
 const ICON_MAP = {
   FileSpreadsheet, Search, ShieldAlert, Sparkles,
@@ -16,6 +17,7 @@ const ICON_MAP = {
 };
 
 export default function AgentDossierModal({ agent, onClose, brands = [] }) {
+  useBodyScrollLock(Boolean(agent));
   const [dossier, setDossier] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dispatchTask, setDispatchTask] = useState('');
@@ -68,18 +70,19 @@ export default function AgentDossierModal({ agent, onClose, brands = [] }) {
   const data = dossier || agent;
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-
-      {/* Modal */}
+    <Portal>
       <div
-        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-2xl border border-[#ECE8E3] animate-fadeIn"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-5 overflow-hidden"
+        onClick={onClose}
       >
+        {/* Backdrop */}
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+        {/* Modal */}
+        <div
+          className="relative w-full max-w-2xl max-h-[85vh] sm:max-h-[88vh] flex flex-col my-auto overflow-hidden bg-white rounded-3xl shadow-2xl border border-[#ECE8E3] animate-in fade-in zoom-in-95 duration-150"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Header */}
         <div
           className="relative p-6 pb-5 rounded-t-3xl overflow-hidden"
@@ -124,7 +127,7 @@ export default function AgentDossierModal({ agent, onClose, brands = [] }) {
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 flex-1 overflow-y-auto">
           {/* Stats Row */}
           {!loading && (
             <div className="grid grid-cols-4 gap-3">
@@ -278,5 +281,6 @@ export default function AgentDossierModal({ agent, onClose, brands = [] }) {
         </div>
       </div>
     </div>
-  );
+  </Portal>
+);
 }
