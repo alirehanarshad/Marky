@@ -54,6 +54,36 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET competitor change events and signals
+router.get('/events', async (req, res) => {
+  try {
+    const events = await db.all(`SELECT * FROM competitor_events ORDER BY created_at DESC LIMIT 30`);
+    res.json({ success: true, data: events });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST record new competitor event / change alert
+router.post('/events', async (req, res) => {
+  try {
+    const { competitor_id, competitor_name, event_type, title, description, impact_level = 'Medium' } = req.body;
+    if (!title || !competitor_name) {
+      return res.status(400).json({ success: false, error: 'Competitor name and title are required' });
+    }
+
+    const result = await db.run(`
+      INSERT INTO competitor_events (competitor_id, competitor_name, event_type, title, description, impact_level)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [competitor_id || 0, competitor_name, event_type || 'Market Shift', title, description || '', impact_level]);
+
+    const created = await db.get(`SELECT * FROM competitor_events WHERE id = ?`, [result.lastID]);
+    res.status(201).json({ success: true, data: created });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // GET single competitor with complete intelligence report & evidence
 router.get('/:id', async (req, res) => {
   try {
@@ -81,36 +111,6 @@ router.get('/:id', async (req, res) => {
         threat_breakdown: threatBreakdown
       }
     });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// GET competitor change events and signals
-router.get('/events', async (req, res) => {
-  try {
-    const events = await db.all(`SELECT * FROM competitor_events ORDER BY created_at DESC LIMIT 30`);
-    res.json({ success: true, data: events });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// POST record new competitor event / change alert
-router.post('/events', async (req, res) => {
-  try {
-    const { competitor_id, competitor_name, event_type, title, description, impact_level = 'Medium' } = req.body;
-    if (!title || !competitor_name) {
-      return res.status(400).json({ success: false, error: 'Competitor name and title are required' });
-    }
-
-    const result = await db.run(`
-      INSERT INTO competitor_events (competitor_id, competitor_name, event_type, title, description, impact_level)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `, [competitor_id || 0, competitor_name, event_type || 'Market Shift', title, description || '', impact_level]);
-
-    const created = await db.get(`SELECT * FROM competitor_events WHERE id = ?`, [result.lastID]);
-    res.status(201).json({ success: true, data: created });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
