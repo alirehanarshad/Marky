@@ -331,7 +331,7 @@ router.get('/leads', async (req, res) => {
     const userId = req.user?.id;
     const isAdmin = req.user?.role === 'ADMIN';
     if (userId && !isAdmin) {
-      query += ' AND (l.user_id = ? OR l.user_id = 1)';
+      query += ' AND l.user_id = ?';
       params.push(userId);
     }
 

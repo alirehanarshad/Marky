@@ -32,16 +32,6 @@ import api from '@/lib/api';
 import AddBrandModal from '@/components/AddBrandModal';
 import AddCampaignModal from '@/components/AddCampaignModal';
 
-const PERFORMANCE_DATA = [
-  { day: 'Mon', revenue: 145000, adSpend: 32000 },
-  { day: 'Tue', revenue: 180000, adSpend: 38000 },
-  { day: 'Wed', revenue: 210000, adSpend: 42000 },
-  { day: 'Thu', revenue: 195000, adSpend: 40000 },
-  { day: 'Fri', revenue: 260000, adSpend: 54000 },
-  { day: 'Sat', revenue: 340000, adSpend: 68000 },
-  { day: 'Sun', revenue: 390000, adSpend: 75000 },
-];
-
 export default function Dashboard() {
   const [brands, setBrands] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
@@ -52,15 +42,38 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [actionFeedback, setActionFeedback] = useState('');
 
+  const [activeBrandId, setActiveBrandId] = useState(null);
+  const [activeBrandName, setActiveBrandName] = useState('All Brands');
+
   // Modals
   const [showAddBrand, setShowAddBrand] = useState(false);
   const [showAddCampaign, setShowAddCampaign] = useState(false);
 
   useEffect(() => {
-    loadDashboardData();
+    const handleBrandChange = () => {
+      if (typeof window !== 'undefined') {
+        const bId = localStorage.getItem('marketpulse_active_brand_id');
+        const bName = localStorage.getItem('marketpulse_active_brand') || 'All Brands';
+        setActiveBrandId(bId || null);
+        setActiveBrandName(bName);
+        loadDashboardData(bId || null);
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      const bId = localStorage.getItem('marketpulse_active_brand_id');
+      const bName = localStorage.getItem('marketpulse_active_brand') || 'All Brands';
+      setActiveBrandId(bId || null);
+      setActiveBrandName(bName);
+      loadDashboardData(bId || null);
+      window.addEventListener('brandSelected', handleBrandChange);
+      return () => window.removeEventListener('brandSelected', handleBrandChange);
+    } else {
+      loadDashboardData(null);
+    }
   }, []);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (brandId = activeBrandId) => {
     try {
       const [
         brandsRes,
@@ -70,16 +83,16 @@ export default function Dashboard() {
         workforceRes
       ] = await Promise.all([
         api.getBrands(),
-        api.getCampaigns(),
-        api.getCampaignStats(),
+        api.getCampaigns(brandId ? { brand_id: brandId } : {}),
+        api.getCampaignStats(brandId),
         api.getLeads(),
         api.getWorkforceStatus()
       ]);
 
-      if (brandsRes.success) setBrands(brandsRes.data);
-      if (campaignsRes.success) setCampaigns(campaignsRes.data);
+      if (brandsRes.success) setBrands(brandsRes.data || []);
+      if (campaignsRes.success) setCampaigns(campaignsRes.data || []);
       if (statsRes.success) setCampaignStats(statsRes.data);
-      if (leadsRes.success) setLeads(leadsRes.data);
+      if (leadsRes.success) setLeads(leadsRes.data || []);
       if (workforceRes.success) {
         setWorkforceData(workforceRes.data);
         if (workforceRes.data.recentRuns) setRecentRuns(workforceRes.data.recentRuns);
@@ -179,11 +192,13 @@ export default function Dashboard() {
           </div>
           <div>
             <h3 className="text-2xl font-black text-[#141226] tracking-tight">
-              PKR {(campaignStats?.active_budget || 1300000).toLocaleString()}
+              PKR {(campaignStats?.active_budget || 0).toLocaleString()}
             </h3>
             <p className="text-[11px] text-[#4239C4] font-bold flex items-center gap-1 mt-1">
               <TrendingUp className="w-3.5 h-3.5" />
-              <span>Blended ROAS: 3.84x</span>
+              <span>
+                {campaignStats?.active_budget > 0 ? 'Active Deployment' : 'No ad spend allocated'}
+              </span>
             </p>
           </div>
         </div>
@@ -198,10 +213,10 @@ export default function Dashboard() {
           </div>
           <div>
             <h3 className="text-2xl font-black text-[#141226] tracking-tight">
-              {campaignStats?.active_campaigns || 3} <span className="text-xs font-semibold text-[#9894AD]">/ {campaignStats?.total_campaigns || 5}</span>
+              {campaignStats?.active_campaigns || 0} <span className="text-xs font-semibold text-[#9894AD]">/ {campaignStats?.total_campaigns || 0}</span>
             </h3>
             <p className="text-[11px] text-[#6C6782] font-medium mt-1">
-              {campaignStats?.draft_campaigns || 1} Draft • {campaignStats?.paused_campaigns || 1} Paused
+              {campaignStats?.draft_campaigns || 0} Draft • {campaignStats?.paused_campaigns || 0} Paused
             </p>
           </div>
         </div>
@@ -253,11 +268,11 @@ export default function Dashboard() {
           </div>
           <div>
             <h3 className="text-2xl font-black text-[#4239C4] tracking-tight">
-              {kpis.tasksAutomated || 21} <span className="text-xs font-bold text-[#9894AD]">runs</span>
+              {kpis.tasksAutomated || 0} <span className="text-xs font-bold text-[#9894AD]">runs</span>
             </h3>
             <p className="text-[11px] text-[#7A5DBB] font-bold flex items-center gap-1 mt-1">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>{kpis.estimatedHoursSaved || '54.6'} hrs work saved</span>
+              <span>{kpis.estimatedHoursSaved ? `${kpis.estimatedHoursSaved} hrs work saved` : 'Autonomous pipeline ready'}</span>
             </p>
           </div>
         </div>
@@ -284,30 +299,29 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={PERFORMANCE_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="markyRevGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4239C4" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#7A5DBB" stopOpacity={0.0} />
-                  </linearGradient>
-                  <linearGradient id="markySpendGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#D97FA5" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#F0A09F" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ECE8E3" />
-                <XAxis dataKey="day" stroke="#9894AD" fontSize={11} tickLine={false} />
-                <YAxis stroke="#9894AD" fontSize={10} tickLine={false} tickFormatter={(v) => `${(v/1000)}k`} />
-                <Tooltip
-                  formatter={(val) => [`PKR ${Number(val).toLocaleString()}`, '']}
-                  contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #ECE8E3', fontSize: '11px', fontWeight: 'bold' }}
-                />
-                <Area type="monotone" dataKey="revenue" stroke="#4239C4" strokeWidth={2.5} fillOpacity={1} fill="url(#markyRevGradient)" name="Revenue" />
-                <Area type="monotone" dataKey="adSpend" stroke="#D97FA5" strokeWidth={2} fillOpacity={1} fill="url(#markySpendGradient)" name="Ad Spend" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="h-64 w-full flex items-center justify-center">
+            {campaigns.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={campaigns.map(c => ({ name: c.name.substring(0, 14), budget: Number(c.budget) }))} margin={{ top: 10, right: 10, left: -10, bottom: 25 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ECE8E3" />
+                  <XAxis dataKey="name" stroke="#9894AD" fontSize={10} interval={0} angle={-20} textAnchor="end" />
+                  <YAxis stroke="#9894AD" fontSize={10} tickLine={false} tickFormatter={(v) => `${(v/1000)}k`} />
+                  <Tooltip
+                    formatter={(val) => [`PKR ${Number(val).toLocaleString()}`, 'Allocated Budget']}
+                    contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #ECE8E3', fontSize: '11px', fontWeight: 'bold' }}
+                  />
+                  <Bar dataKey="budget" fill="#4239C4" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center p-6 space-y-2 text-[#9894AD]">
+                <Layers className="w-8 h-8 mx-auto text-[#7A5DBB]/40 stroke-[1.5]" />
+                <p className="text-xs font-bold text-[#141226]">No active campaign metrics yet</p>
+                <p className="text-[11px] max-w-xs mx-auto">
+                  Create your first marketing campaign to track cross-network ad spend and revenue pace.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

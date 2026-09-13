@@ -25,28 +25,40 @@ import {
   Sparkles,
   Video,
   Image as ImageIcon,
-  Coins
+  Coins,
+  LogOut
 } from 'lucide-react';
 import api from '@/lib/api';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [credits, setCredits] = useState(500);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    async function loadCredits() {
+    async function loadUserData() {
       try {
-        const res = await api.getCredits();
-        if (res.success && res.balance !== undefined) {
-          setCredits(res.balance);
+        const cached = typeof window !== 'undefined' ? localStorage.getItem('marky_user') : null;
+        if (cached) {
+          try {
+            setCurrentUser(JSON.parse(cached));
+          } catch (e) {}
+        }
+        const res = await api.getMe();
+        if (res.success && res.user) {
+          setCurrentUser(res.user);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('marky_user', JSON.stringify(res.user));
+          }
         }
       } catch (e) {
-        // Fallback default
+        // Fallback or unauthenticated
       }
     }
-    loadCredits();
-    const interval = setInterval(loadCredits, 15000);
-    return () => clearInterval(interval);
+    loadUserData();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('authChange', loadUserData);
+      return () => window.removeEventListener('authChange', loadUserData);
+    }
   }, []);
 
   const navSections = [
@@ -177,35 +189,49 @@ export default function Sidebar() {
         ))}
       </div>
 
-      {/* Footer System Status & Credits */}
+      {/* Footer System User & Account Menu */}
       <div className="p-3 border-t border-[#1C1938] bg-[#070613] space-y-2">
-        {/* Global MARKY Credits Indicator */}
         <div className="p-2.5 rounded-xl bg-gradient-to-r from-[#1D193E] to-[#131028] border border-[#7A5DBB]/30 flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-[#4239C4]/20 border border-[#7A5DBB]/40 flex items-center justify-center text-[#D1C3FF]">
-              <Coins className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#4239C4] to-[#7A5DBB] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-md">
+              {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'M'}
             </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-[#8E8AAB] font-bold">MARKY Credits</p>
-              <p className="text-xs font-extrabold text-white">
-                {credits} <span className="text-[10px] font-medium text-[#A59FFF]">remaining</span>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white truncate">
+                {currentUser?.name || 'Marky Operator'}
               </p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-[#4239C4]/30 text-[#D1C3FF] border border-[#7A5DBB]/30 uppercase">
+                  {currentUser?.role || 'USER'}
+                </span>
+                <span className="text-[10px] text-[#8E8AAB] truncate">{currentUser?.email}</span>
+              </div>
             </div>
           </div>
-          <Link
-            href="/creative-studio"
-            className="text-[10px] font-bold text-[#D1C3FF] hover:text-white bg-[#4239C4]/30 hover:bg-[#4239C4] px-2 py-1 rounded-lg border border-[#7A5DBB]/40 transition-colors"
-          >
-            Studio
-          </Link>
         </div>
 
-        {/* Credit warning tier if under 25% or 50% */}
-        {credits <= 125 && (
-          <div className="px-2 py-1 rounded-lg bg-red-950/40 border border-red-500/30 text-red-300 text-[10px] font-medium text-center">
-            ⚠️ Low credits ({credits}). Consider Budget Mode.
-          </div>
-        )}
+        {/* Quick Account Navigation */}
+        <div className="grid grid-cols-2 gap-1.5">
+          <Link
+            href="/settings"
+            className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-[#14112E] hover:bg-[#1F1B47] text-[#B4AFCC] hover:text-white text-[11px] font-semibold border border-[#1C1938] transition-colors"
+          >
+            <Settings className="w-3 h-3 text-[#A59FFF]" />
+            <span>Settings</span>
+          </Link>
+          <button
+            onClick={() => {
+              api.logout();
+              if (typeof window !== 'undefined') {
+                window.location.href = '/login';
+              }
+            }}
+            className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-[#14112E] hover:bg-red-950/40 text-[#B4AFCC] hover:text-red-300 text-[11px] font-semibold border border-[#1C1938] transition-colors cursor-pointer"
+          >
+            <LogOut className="w-3 h-3 text-red-400" />
+            <span>Sign Out</span>
+          </button>
+        </div>
       </div>
     </aside>
   );

@@ -4,7 +4,7 @@ import { aiService } from '../services/ai.service.js';
 
 const router = Router();
 
-// GET all campaigns with optional filters
+// GET all campaigns with optional filters (tenant & brand isolated)
 router.get('/', async (req, res) => {
   try {
     const { brand_id, status, approval_status } = req.query;
@@ -28,6 +28,10 @@ router.get('/', async (req, res) => {
       query += ` AND c.approval_status = ?`;
       params.push(approval_status);
     }
+    if (req.user && req.user.role !== 'ADMIN') {
+      query += ` AND (c.user_id = ? OR b.user_id = ?)`;
+      params.push(req.user.id, req.user.id);
+    }
 
     query += ` ORDER BY c.created_at DESC`;
     const campaigns = await db.all(query, params);
@@ -37,41 +41,45 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET single campaign by ID
-router.get('/:id', async (req, res) => {
-  try {
-    const campaign = await db.get(
-      `SELECT c.*, b.name as brand_name, b.category as brand_category, b.website as brand_website, b.brand_voice, b.tone, b.usps, b.target_audience as brand_target_audience
-       FROM campaigns c
-       LEFT JOIN brands b ON c.brand_id = b.id
-       WHERE c.id = ?`,
-      [req.params.id]
-    );
-    if (!campaign) return res.status(404).json({ success: false, error: 'Campaign not found' });
-    res.json({ success: true, data: campaign });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// GET campaign stats for dashboard
+// GET campaign stats for dashboard (honest real metrics, brand & tenant scoped)
 router.get('/stats', async (req, res) => {
   try {
+    const { brand_id } = req.query;
+    let whereClause = ' WHERE 1=1 ';
+    const params = [];
+
+    if (brand_id && brand_id !== 'undefined' && brand_id !== 'All') {
+      whereClause += ' AND c.brand_id = ? ';
+      params.push(brand_id);
+    }
+    if (req.user && req.user.role !== 'ADMIN') {
+      whereClause += ' AND (c.user_id = ? OR b.user_id = ?) ';
+      params.push(req.user.id, req.user.id);
+    }
+
     const totals = await db.get(`
       SELECT 
-        COUNT(*) as total_campaigns,
-        SUM(CASE WHEN status = 'Active' THEN 1 ELSE 0 END) as active_campaigns,
-        SUM(CASE WHEN status = 'Draft' THEN 1 ELSE 0 END) as draft_campaigns,
-        SUM(CASE WHEN status = 'Paused' THEN 1 ELSE 0 END) as paused_campaigns,
-        SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed_campaigns,
-        COALESCE(SUM(budget), 0) as total_budget,
-        COALESCE(SUM(CASE WHEN status = 'Active' THEN budget ELSE 0 END), 0) as active_budget,
-        SUM(CASE WHEN approval_status = 'Pending Approval' THEN 1 ELSE 0 END) as pending_approvals_count
-      FROM campaigns
-    `);
+        COUNT(c.id) as total_campaigns,
+        COALESCE(SUM(CASE WHEN c.status = 'Active' THEN 1 ELSE 0 END), 0) as active_campaigns,
+        COALESCE(SUM(CASE WHEN c.status = 'Draft' THEN 1 ELSE 0 END), 0) as draft_campaigns,
+        COALESCE(SUM(CASE WHEN c.status = 'Paused' THEN 1 ELSE 0 END), 0) as paused_campaigns,
+        COALESCE(SUM(CASE WHEN c.status = 'Completed' THEN 1 ELSE 0 END), 0) as completed_campaigns,
+        COALESCE(SUM(c.budget), 0) as total_budget,
+        COALESCE(SUM(CASE WHEN c.status = 'Active' THEN c.budget ELSE 0 END), 0) as active_budget,
+        COALESCE(SUM(CASE WHEN c.approval_status = 'Pending Approval' THEN 1 ELSE 0 END), 0) as pending_approvals_count
+      FROM campaigns c
+      LEFT JOIN brands b ON c.brand_id = b.id
+      ${whereClause}
+    `, params);
 
     // Budget distribution by platform
-    const allCampaigns = await db.all(`SELECT platforms, budget FROM campaigns WHERE status = 'Active'`);
+    const allCampaigns = await db.all(`
+      SELECT c.platforms, c.budget 
+      FROM campaigns c
+      LEFT JOIN brands b ON c.brand_id = b.id
+      ${whereClause} AND c.status = 'Active'
+    `, params);
+
     const platformBreakdown = {};
     for (const c of allCampaigns) {
       const plats = (c.platforms || 'Other').split(',').map(p => p.trim());
@@ -84,10 +92,40 @@ router.get('/stats', async (req, res) => {
     res.json({
       success: true,
       data: {
-        ...totals,
+        total_campaigns: totals?.total_campaigns || 0,
+        active_campaigns: totals?.active_campaigns || 0,
+        draft_campaigns: totals?.draft_campaigns || 0,
+        paused_campaigns: totals?.paused_campaigns || 0,
+        completed_campaigns: totals?.completed_campaigns || 0,
+        total_budget: totals?.total_budget || 0,
+        active_budget: totals?.active_budget || 0,
+        pending_approvals_count: totals?.pending_approvals_count || 0,
         platformBreakdown
       }
     });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET single campaign by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const campaign = await db.get(
+      `SELECT c.*, b.name as brand_name, b.category as brand_category, b.website as brand_website, b.brand_voice, b.tone, b.usps, b.target_audience as brand_target_audience,
+              b.user_id as brand_user_id
+       FROM campaigns c
+       LEFT JOIN brands b ON c.brand_id = b.id
+       WHERE c.id = ?`,
+      [req.params.id]
+    );
+    if (!campaign) return res.status(404).json({ success: false, error: 'Campaign not found' });
+
+    if (req.user && req.user.role !== 'ADMIN' && campaign.user_id && campaign.user_id !== req.user.id && campaign.brand_user_id !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied: You do not own this campaign.' });
+    }
+
+    res.json({ success: true, data: campaign });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -424,14 +462,24 @@ router.post('/', async (req, res) => {
 
     if (!name) return res.status(400).json({ success: false, error: 'Campaign name is required' });
 
+    const userId = req.user?.id || 1;
+
+    // Verify brand ownership if specified
+    if (brand_id && req.user && req.user.role !== 'ADMIN') {
+      const brand = await db.get('SELECT user_id FROM brands WHERE id = ?', [brand_id]);
+      if (brand && brand.user_id && brand.user_id !== req.user.id) {
+        return res.status(403).json({ success: false, error: 'Cannot attach campaign to a brand you do not own.' });
+      }
+    }
+
     const formattedPlatforms = Array.isArray(platforms) ? platforms.join(', ') : (platforms || 'Meta, TikTok');
 
     const result = await db.run(
       `INSERT INTO campaigns (
         brand_id, name, objective, status, start_date, end_date, budget, currency, 
         platforms, kpi, creative, copy, landing_page, target_geography, approval_status,
-        blueprint_json, tags, target_audience
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        blueprint_json, tags, target_audience, user_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         brand_id || null,
         name,
@@ -450,7 +498,8 @@ router.post('/', async (req, res) => {
         approval_status || 'Approved',
         blueprint_json ? (typeof blueprint_json === 'string' ? blueprint_json : JSON.stringify(blueprint_json)) : null,
         tags || '',
-        target_audience || ''
+        target_audience || '',
+        userId
       ]
     );
 
@@ -476,8 +525,15 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const fields = req.body;
-    const current = await db.get(`SELECT * FROM campaigns WHERE id = ?`, [req.params.id]);
+    const current = await db.get(
+      `SELECT c.*, b.user_id as brand_user_id FROM campaigns c LEFT JOIN brands b ON c.brand_id = b.id WHERE c.id = ?`,
+      [req.params.id]
+    );
     if (!current) return res.status(404).json({ success: false, error: 'Campaign not found' });
+
+    if (req.user && req.user.role !== 'ADMIN' && current.user_id && current.user_id !== req.user.id && current.brand_user_id !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied: You do not own this campaign.' });
+    }
 
     const formattedPlatforms = Array.isArray(fields.platforms) ? fields.platforms.join(', ') : fields.platforms;
 
@@ -538,6 +594,16 @@ router.put('/:id', async (req, res) => {
 // DELETE campaign
 router.delete('/:id', async (req, res) => {
   try {
+    const current = await db.get(
+      `SELECT c.*, b.user_id as brand_user_id FROM campaigns c LEFT JOIN brands b ON c.brand_id = b.id WHERE c.id = ?`,
+      [req.params.id]
+    );
+    if (!current) return res.status(404).json({ success: false, error: 'Campaign not found' });
+
+    if (req.user && req.user.role !== 'ADMIN' && current.user_id && current.user_id !== req.user.id && current.brand_user_id !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied: You do not own this campaign.' });
+    }
+
     await db.run(`DELETE FROM campaigns WHERE id = ?`, [req.params.id]);
     res.json({ success: true, message: 'Campaign deleted' });
   } catch (err) {

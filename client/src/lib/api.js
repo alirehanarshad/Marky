@@ -98,14 +98,24 @@ export const cache = new ApiCache();
 
 async function request(endpoint, options = {}) {
   const isGet = !options.method || options.method === 'GET';
-  const cacheKey = endpoint;
+
+  let userPrefix = 'anon';
+  let activeBrandPrefix = 'all';
+  if (typeof window !== 'undefined') {
+    try {
+      const u = localStorage.getItem('marky_user');
+      if (u) userPrefix = JSON.parse(u).id || 'anon';
+      activeBrandPrefix = localStorage.getItem('marketpulse_active_brand_id') || 'all';
+    } catch (e) {}
+  }
+
+  const cacheKey = `${userPrefix}:${activeBrandPrefix}:${endpoint}`;
   const skipCache = options.fresh === true || !isGet;
 
-  // 1. If it's a GET and cache is allowed, check cache first (0ms instant return!)
+  // 1. If it's a GET and cache is allowed, check cache first
   if (!skipCache) {
     const cached = cache.get(cacheKey);
     if (cached) {
-      // If stale, schedule background revalidation without blocking caller
       if (cached.isStale && !cache.inFlight.has(cacheKey)) {
         setTimeout(() => {
           fetchAndCache(endpoint, options, cacheKey).catch(() => {});
@@ -114,7 +124,7 @@ async function request(endpoint, options = {}) {
       return cached.data;
     }
 
-    // 2. Request deduplication: If identical GET request is already in flight, share Promise!
+    // 2. Request deduplication
     if (cache.inFlight.has(cacheKey)) {
       return cache.inFlight.get(cacheKey);
     }
@@ -163,12 +173,16 @@ async function fetchAndCache(endpoint, options, cacheKey, saveToCache = true) {
     const res = await fetch(url, config);
     const data = await res.json();
     if (!res.ok) {
+      if (res.status === 401 && typeof window !== 'undefined' && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
+        localStorage.removeItem('marky_token');
+        localStorage.removeItem('marky_user');
+        window.dispatchEvent(new CustomEvent('marky:auth_unauthorized'));
+      }
       throw new Error(data.error || `HTTP error! status: ${res.status}`);
     }
 
     if (saveToCache) {
       cache.set(cacheKey, data);
-      // Dispatch background update event for subscribers
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('marky:cache_updated', { detail: { endpoint, data } }));
       }
@@ -184,21 +198,16 @@ async function fetchAndCache(endpoint, options, cacheKey, saveToCache = true) {
     }
 
     // 2. Retry once after 300ms if not already retried
-    if (!options.retried) {
+    if (!options.retried && (!options.method || options.method === 'GET')) {
       await new Promise(r => setTimeout(r, 300));
       try {
         return await fetchAndCache(endpoint, { ...options, retried: true }, cacheKey, saveToCache);
       } catch (retryErr) {
-        // Fall through to safe response
+        // Fall through to error
       }
     }
 
-    console.warn(`Gracefully handling connection notice on ${endpoint}:`, err.message);
-    // 3. For GET requests, return safe payload instead of throwing an unhandled exception
-    if (!options.method || options.method === 'GET') {
-      return { success: true, data: [], fallback: true };
-    }
-
+    console.error(`API Error on ${endpoint}:`, err.message);
     throw err;
   }
 }
@@ -363,7 +372,10 @@ export const api = {
     return request(`/campaigns${query ? `?${query}` : ''}`, { fresh });
   },
   getCampaign: (id) => request(`/campaigns/${id}`),
-  getCampaignStats: (fresh = false) => request('/campaigns/stats', { fresh }),
+  getCampaignStats: (brandId, fresh = false) => {
+    const query = brandId && brandId !== 'All' && brandId !== 'undefined' ? `?brand_id=${brandId}` : '';
+    return request(`/campaigns/stats${query}`, { fresh });
+  },
   createCampaign: (data) => request('/campaigns', { method: 'POST', body: JSON.stringify(data) }),
   updateCampaign: (id, data) => request(`/campaigns/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   generateCampaignBlueprint: (payload) => request('/campaigns/generate-blueprint', { method: 'POST', body: JSON.stringify(payload) }),
@@ -399,7 +411,10 @@ export const api = {
     const query = q.toString();
     return request(`/crm${query ? `?${query}` : ''}`, { fresh });
   },
-  getCRMStats: (fresh = false) => request('/crm/stats', { fresh }),
+  getCRMStats: (brandId, fresh = false) => {
+    const query = brandId && brandId !== 'All' && brandId !== 'undefined' ? `?brand_id=${brandId}` : '';
+    return request(`/crm/stats${query}`, { fresh });
+  },
   getLeadActivities: (leadId) => request(`/crm/${leadId}/activities`),
   addLeadActivity: (leadId, data) => request(`/crm/${leadId}/activities`, { method: 'POST', body: JSON.stringify(data) }),
   createLead: (data) => request('/crm', { method: 'POST', body: JSON.stringify(data) }),
@@ -445,7 +460,13 @@ export const api = {
   getJobStatus: (jobId) => request(`/jobs/${jobId}`),
 
   // Content Library
-  getSavedContent: (toolId, fresh = false) => request(`/content${toolId ? `?tool_id=${encodeURIComponent(toolId)}` : ''}`, { fresh }),
+  getSavedContent: (toolId, brandId, fresh = false) => {
+    const q = new URLSearchParams();
+    if (toolId) q.append('tool_id', toolId);
+    if (brandId && brandId !== 'All' && brandId !== 'undefined') q.append('brand_id', brandId);
+    const query = q.toString();
+    return request(`/content${query ? `?${query}` : ''}`, { fresh });
+  },
   saveContent: (payload) => request('/content', { method: 'POST', body: JSON.stringify(payload) }),
   updateSavedContent: (id, payload) => request(`/content/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   toggleContentStatus: (id, status) => request(`/content/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
@@ -475,7 +496,7 @@ export const api = {
   deleteAsset: (id) => request(`/creative/asset/${id}`, { method: 'DELETE' }),
 
   // Products
-  getProducts: (brandId, fresh = false) => request(`/products${brandId ? `?brand_id=${brandId}` : ''}`, { fresh }),
+  getProducts: (brandId, fresh = false) => request(`/products${brandId && brandId !== 'All' && brandId !== 'undefined' ? `?brand_id=${brandId}` : ''}`, { fresh }),
   getProduct: (id) => request(`/products/${id}`),
   createProduct: (payload) => request('/products', { method: 'POST', body: JSON.stringify(payload) }),
   updateProduct: (id, payload) => request(`/products/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
@@ -485,6 +506,8 @@ export const api = {
   login: (email, password) => request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   register: (name, email, password) => request('/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password }) }),
   getMe: (fresh = true) => request('/auth/me', { fresh }),
+  updateProfile: (payload) => request('/auth/profile', { method: 'PUT', body: JSON.stringify(payload) }),
+  changePassword: (payload) => request('/auth/change-password', { method: 'POST', body: JSON.stringify(payload) }),
   logout: () => {
     if (typeof window !== 'undefined') {
       try {

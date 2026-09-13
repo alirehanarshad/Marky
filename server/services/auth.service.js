@@ -198,6 +198,51 @@ export class AuthService {
     await db.run(`UPDATE users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [role, id]);
     return await db.get('SELECT id, name, email, role, status FROM users WHERE id = ?', [id]);
   }
+
+  /**
+   * Updates user profile (name, avatar_url)
+   */
+  async updateProfile(userId, { name, avatar_url }) {
+    if (!name || !name.trim()) {
+      throw new Error('Name cannot be blank.');
+    }
+    const cleanName = name.trim();
+    await db.run(
+      `UPDATE users SET name = ?, avatar_url = COALESCE(?, avatar_url), updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      [cleanName, avatar_url || null, userId]
+    );
+    return await db.get('SELECT id, name, email, role, status, avatar_url FROM users WHERE id = ?', [userId]);
+  }
+
+  /**
+   * Securely changes password with verification of old password
+   */
+  async changePassword(userId, oldPassword, newPassword) {
+    if (!oldPassword || !newPassword) {
+      throw new Error('Both current password and new password are required.');
+    }
+    if (newPassword.length < 8) {
+      throw new Error('New password must be at least 8 characters.');
+    }
+
+    const user = await db.get('SELECT * FROM users WHERE id = ?', [userId]);
+    if (!user) {
+      throw new Error('User account not found.');
+    }
+
+    const isValid = this.verifyPassword(oldPassword, user.password_hash);
+    if (!isValid) {
+      throw new Error('Current password is incorrect.');
+    }
+
+    const newHash = this.hashPassword(newPassword);
+    await db.run(
+      `UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      [newHash, userId]
+    );
+
+    return { success: true, message: 'Password updated successfully.' };
+  }
 }
 
 export const authService = new AuthService();

@@ -49,6 +49,33 @@ router.get('/me', authenticate, async (req, res) => {
   });
 });
 
+// PUT /api/auth/profile — Update user profile (name, avatar)
+router.put('/profile', authenticate, async (req, res) => {
+  try {
+    const { name, avatar_url } = req.body;
+    const updated = await authService.updateProfile(req.user.id, { name, avatar_url });
+    res.json({
+      success: true,
+      message: 'Profile updated successfully.',
+      user: updated
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/auth/change-password — Securely change password
+router.post('/change-password', authenticate, authRateLimiter, async (req, res) => {
+  try {
+    const currentPassword = req.body.currentPassword || req.body.oldPassword;
+    const { newPassword } = req.body;
+    const result = await authService.changePassword(req.user.id, currentPassword, newPassword);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
 // POST /api/auth/logout — Clears session context
 router.post('/logout', optionalAuth, async (req, res) => {
   res.json({

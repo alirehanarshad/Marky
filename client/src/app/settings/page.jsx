@@ -79,6 +79,16 @@ export default function SettingsPage() {
   const [prefWhatsAppSync, setPrefWhatsAppSync] = useState(true);
   const [savePrefNotice, setSavePrefNotice] = useState('');
 
+  // Editable Profile & Password State
+  const [editName, setEditName] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileFeedback, setProfileFeedback] = useState('');
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordFeedback, setPasswordFeedback] = useState('');
+
   useEffect(() => {
     checkCurrentUser();
   }, []);
@@ -92,6 +102,7 @@ export default function SettingsPage() {
         const res = await api.getMe();
         if (res.success && res.user) {
           setCurrentUser(res.user);
+          setEditName(res.user.name || '');
           if (res.user.role === 'ADMIN') {
             loadAdminData();
           }
@@ -100,18 +111,74 @@ export default function SettingsPage() {
         }
       }
 
-      // If no token exists yet, auto-login as default Admin for initial ease
-      const loginRes = await api.login('admin@marky.ai', 'Admin@Marky2026!');
-      if (loginRes.success && loginRes.user) {
-        localStorage.setItem('marky_token', loginRes.token);
-        localStorage.setItem('marky_user', JSON.stringify(loginRes.user));
-        setCurrentUser(loginRes.user);
-        loadAdminData();
+      // If no token exists, redirect to login
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
       }
     } catch (e) {
       console.warn('Session check notice:', e.message);
     } finally {
       setAuthLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    if (!editName.trim()) return;
+    setSavingProfile(true);
+    setProfileFeedback('');
+    try {
+      const res = await api.updateProfile({ name: editName.trim() });
+      if (res.success && res.user) {
+        setCurrentUser(res.user);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('marky_user', JSON.stringify(res.user));
+          window.dispatchEvent(new Event('authChange'));
+        }
+        setProfileFeedback('Profile name updated successfully!');
+        setTimeout(() => setProfileFeedback(''), 3000);
+      } else {
+        setProfileFeedback(res.error || 'Failed to update profile');
+      }
+    } catch (err) {
+      setProfileFeedback(err.message || 'Error updating profile');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPasswordFeedback('');
+    if (!oldPassword || !newPassword) {
+      setPasswordFeedback('Please fill out both current and new passwords.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordFeedback('New password must be at least 8 characters long.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordFeedback('New password confirmation does not match.');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const res = await api.changePassword(oldPassword, newPassword);
+      if (res.success) {
+        setPasswordFeedback('Password changed successfully!');
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setTimeout(() => setPasswordFeedback(''), 4000);
+      } else {
+        setPasswordFeedback(res.error || 'Failed to change password');
+      }
+    } catch (err) {
+      setPasswordFeedback(err.message || 'Error changing password');
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -367,38 +434,24 @@ export default function SettingsPage() {
         description="Manage your account profile, preferences, system security, and role-based permissions."
         actions={
           <div className="flex items-center gap-2">
-            {/* Quick Role Switcher Pill */}
-            <div className="flex items-center bg-[#F7F6FA] border border-[#ECE8E3] rounded-xl p-1 gap-1">
-              <button
-                onClick={handleSwitchToAdmin}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  isAdmin
-                    ? 'bg-[#4239C4] text-white shadow-xs'
-                    : 'text-[#6C6782] hover:text-[#141226]'
-                }`}
-                title="Switch to Administrator role"
-              >
-                ADMIN
-              </button>
-              <button
-                onClick={handleSwitchToNormalUser}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  !isAdmin
-                    ? 'bg-[#7A5DBB] text-white shadow-xs'
-                    : 'text-[#6C6782] hover:text-[#141226]'
-                }`}
-                title="Switch to Normal User role"
-              >
-                USER
-              </button>
-            </div>
+            <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+              isAdmin
+                ? 'bg-[#4239C4]/15 text-[#4239C4] border border-[#4239C4]/30'
+                : 'bg-[#7A5DBB]/15 text-[#7A5DBB] border border-[#7A5DBB]/30'
+            }`}>
+              {currentUser?.role || 'USER'}
+            </span>
 
             <button
-              onClick={() => setShowAuthModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 marky-btn-secondary text-xs font-bold cursor-pointer"
+              onClick={() => {
+                api.logout();
+                window.location.href = '/login';
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold cursor-pointer transition-colors"
+              title="Sign Out"
             >
-              <User className="w-3.5 h-3.5 text-[#7A5DBB]" />
-              <span>{currentUser ? currentUser.email : 'Sign In'}</span>
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Sign Out</span>
             </button>
           </div>
         }
@@ -480,38 +533,98 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-[#141226] mb-1">Full Name</label>
-                <input
-                  type="text"
-                  disabled
-                  value={currentUser?.name || 'Administrator'}
-                  className="w-full bg-[#F7F6FA] border border-[#ECE8E3] rounded-xl px-3.5 py-2 text-xs text-[#141226] opacity-80"
-                />
+            <form onSubmit={handleSaveProfile} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-[#141226] mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full bg-[#F7F6FA] border border-[#ECE8E3] rounded-xl px-3.5 py-2 text-xs text-[#141226] focus:outline-hidden focus:ring-2 focus:ring-[#4239C4]/20 focus:border-[#4239C4] font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#141226] mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    disabled
+                    value={currentUser?.email || ''}
+                    className="w-full bg-[#ECE8E3]/50 border border-[#ECE8E3] rounded-xl px-3.5 py-2 text-xs text-[#6C6782] cursor-not-allowed"
+                    title="Email is protected and tied to cryptographic session signing"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-[#141226] mb-1">Email Address</label>
-                <input
-                  type="email"
-                  disabled
-                  value={currentUser?.email || 'admin@marky.ai'}
-                  className="w-full bg-[#F7F6FA] border border-[#ECE8E3] rounded-xl px-3.5 py-2 text-xs text-[#141226] opacity-80"
-                />
-              </div>
-            </div>
 
-            <div className="pt-4 border-t border-[#ECE8E3] flex items-center justify-between">
+              <div className="flex items-center justify-between pt-1">
+                {profileFeedback && (
+                  <span className={`text-xs font-bold ${profileFeedback.includes('Error') || profileFeedback.includes('Failed') ? 'text-red-600' : 'text-emerald-600'}`}>
+                    {profileFeedback}
+                  </span>
+                )}
+                <button
+                  type="submit"
+                  disabled={savingProfile || !editName.trim()}
+                  className="marky-btn-primary px-4 py-2 text-xs font-bold ml-auto cursor-pointer disabled:opacity-50"
+                >
+                  {savingProfile ? 'Saving...' : 'Save Profile Changes'}
+                </button>
+              </div>
+            </form>
+
+            <div className="pt-6 border-t border-[#ECE8E3] space-y-4">
               <div>
-                <h4 className="text-xs font-bold text-[#141226]">Password Security</h4>
+                <h4 className="text-xs font-bold text-[#141226]">Security Credentials & Password</h4>
                 <p className="text-[11px] text-[#6C6782]">Salted and hashed via native Node.js scrypt with constant-time verification</p>
               </div>
-              <button
-                onClick={() => alert('To change your password, contact your platform administrator or run the secure CLI bootstrap command.')}
-                className="marky-btn-secondary px-3 py-1.5 text-xs font-bold cursor-pointer"
-              >
-                Change Password
-              </button>
+
+              <form onSubmit={handleChangePassword} className="space-y-3 max-w-md">
+                {passwordFeedback && (
+                  <div className={`p-2.5 rounded-xl text-xs font-bold ${passwordFeedback.includes('successfully') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                    {passwordFeedback}
+                  </div>
+                )}
+                <div>
+                  <label className="block text-[11px] font-bold text-[#6C6782] mb-1">Current Password</label>
+                  <input
+                    type="password"
+                    placeholder="••••••••••••"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    className="w-full bg-[#F7F6FA] border border-[#ECE8E3] rounded-xl px-3 py-1.5 text-xs text-[#141226] focus:outline-hidden focus:ring-2 focus:ring-[#4239C4]/20"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#6C6782] mb-1">New Password</label>
+                    <input
+                      type="password"
+                      placeholder="Min. 8 chars"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full bg-[#F7F6FA] border border-[#ECE8E3] rounded-xl px-3 py-1.5 text-xs text-[#141226] focus:outline-hidden focus:ring-2 focus:ring-[#4239C4]/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#6C6782] mb-1">Confirm New</label>
+                    <input
+                      type="password"
+                      placeholder="Repeat new"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full bg-[#F7F6FA] border border-[#ECE8E3] rounded-xl px-3 py-1.5 text-xs text-[#141226] focus:outline-hidden focus:ring-2 focus:ring-[#4239C4]/20"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={changingPassword || !oldPassword || !newPassword}
+                  className="marky-btn-secondary px-4 py-1.5 text-xs font-bold cursor-pointer disabled:opacity-50"
+                >
+                  {changingPassword ? 'Updating Password...' : 'Update Password'}
+                </button>
+              </form>
             </div>
           </div>
         </div>

@@ -83,14 +83,25 @@ export async function initDatabase() {
   await safeAddColumn('crm_leads', 'user_id INTEGER DEFAULT 1');
   await safeAddColumn('competitors', 'user_id INTEGER DEFAULT 1');
   await safeAddColumn('background_jobs', 'user_id INTEGER DEFAULT 1');
+  await safeAddColumn('product_profiles', 'user_id INTEGER DEFAULT 1');
+  await safeAddColumn('product_profiles', 'brand_id INTEGER');
+  await safeAddColumn('saved_content', 'user_id INTEGER DEFAULT 1');
+  await safeAddColumn('saved_content', 'brand_id INTEGER');
+  await safeAddColumn('creative_jobs', 'user_id INTEGER DEFAULT 1');
+  await safeAddColumn('creative_jobs', 'brand_id INTEGER');
 
   // Performance & Security Indexes
   try {
     await db.run(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
     await db.run(`CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)`);
+    await db.run(`CREATE INDEX IF NOT EXISTS idx_brands_user_id ON brands(user_id)`);
+    await db.run(`CREATE INDEX IF NOT EXISTS idx_campaigns_user_id ON campaigns(user_id)`);
+    await db.run(`CREATE INDEX IF NOT EXISTS idx_campaigns_brand_id ON campaigns(brand_id)`);
     await db.run(`CREATE INDEX IF NOT EXISTS idx_crm_leads_user_id ON crm_leads(user_id)`);
     await db.run(`CREATE INDEX IF NOT EXISTS idx_competitors_user_id ON competitors(user_id)`);
     await db.run(`CREATE INDEX IF NOT EXISTS idx_background_jobs_user_id ON background_jobs(user_id)`);
+    await db.run(`CREATE INDEX IF NOT EXISTS idx_product_profiles_user_brand ON product_profiles(user_id, brand_id)`);
+    await db.run(`CREATE INDEX IF NOT EXISTS idx_saved_content_user_brand ON saved_content(user_id, brand_id)`);
   } catch (e) {}
 
   // Bootstrap Administrator Account

@@ -3,18 +3,26 @@ import { db } from '../database.js';
 
 const router = Router();
 
-// GET all brands with summary stats
+// GET all brands with summary stats (tenant isolated)
 router.get('/', async (req, res) => {
   try {
-    const brands = await db.all(`
+    let query = `
       SELECT b.*, 
              COUNT(c.id) as campaigns_count,
              COALESCE(SUM(CASE WHEN c.status = 'Active' THEN c.budget ELSE 0 END), 0) as active_budget
       FROM brands b
       LEFT JOIN campaigns c ON b.id = c.brand_id
+    `;
+    const params = [];
+    if (req.user && req.user.role !== 'ADMIN') {
+      query += ` WHERE b.user_id = ? `;
+      params.push(req.user.id);
+    }
+    query += `
       GROUP BY b.id
       ORDER BY b.created_at DESC
-    `);
+    `;
+    const brands = await db.all(query, params);
     res.json({ success: true, data: brands });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -26,6 +34,9 @@ router.get('/:id', async (req, res) => {
   try {
     const brand = await db.get(`SELECT * FROM brands WHERE id = ?`, [req.params.id]);
     if (!brand) return res.status(404).json({ success: false, error: 'Brand not found' });
+    if (req.user && req.user.role !== 'ADMIN' && brand.user_id && brand.user_id !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied: You do not own this brand record.' });
+    }
     
     const campaigns = await db.all(`SELECT * FROM campaigns WHERE brand_id = ?`, [req.params.id]);
     res.json({ success: true, data: { ...brand, campaigns } });
@@ -64,13 +75,15 @@ router.post('/', async (req, res) => {
 
     if (!name) return res.status(400).json({ success: false, error: 'Brand name is required' });
 
+    const userId = req.user?.id || 1;
+
     const result = await db.run(
       `INSERT INTO brands (
         name, company_name, industry, category, tier, description, website,
         product_service, product_category, pricing, target_audience, target_locations,
         brand_voice, tone, brand_positioning, competitors, usps, key_messaging,
-        keywords, social_platforms, marketing_goals, business_goals
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        keywords, social_platforms, marketing_goals, business_goals, user_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         name,
         company_name || name,
@@ -93,7 +106,8 @@ router.post('/', async (req, res) => {
         keywords || '',
         social_platforms || 'TikTok, Facebook, Instagram, Daraz',
         marketing_goals || 'Rapid scale & 4x ROAS',
-        business_goals || 'Customer acquisition & low CAC'
+        business_goals || 'Customer acquisition & low CAC',
+        userId
       ]
     );
 
@@ -165,6 +179,9 @@ router.put('/:id', async (req, res) => {
     const fields = req.body;
     const current = await db.get(`SELECT * FROM brands WHERE id = ?`, [req.params.id]);
     if (!current) return res.status(404).json({ success: false, error: 'Brand not found' });
+    if (req.user && req.user.role !== 'ADMIN' && current.user_id && current.user_id !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied: You do not own this brand record.' });
+    }
 
     await db.run(
       `UPDATE brands SET 
@@ -228,7 +245,14 @@ router.put('/:id', async (req, res) => {
 // DELETE brand
 router.delete('/:id', async (req, res) => {
   try {
+    const current = await db.get(`SELECT * FROM brands WHERE id = ?`, [req.params.id]);
+    if (!current) return res.status(404).json({ success: false, error: 'Brand not found' });
+    if (req.user && req.user.role !== 'ADMIN' && current.user_id && current.user_id !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied: You do not own this brand record.' });
+    }
+
     await db.run(`DELETE FROM campaigns WHERE brand_id = ?`, [req.params.id]);
+    await db.run(`DELETE FROM product_profiles WHERE brand_id = ?`, [req.params.id]);
     await db.run(`DELETE FROM brands WHERE id = ?`, [req.params.id]);
     res.json({ success: true, message: 'Brand deleted' });
   } catch (err) {

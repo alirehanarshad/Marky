@@ -23,7 +23,7 @@ import jobsRouter from './routes/jobs.routes.js';
 import authRouter from './routes/auth.routes.js';
 import adminUsersRouter from './routes/admin-users.routes.js';
 import { applySecurityHeaders } from './middleware/security.middleware.js';
-import { optionalAuth } from './middleware/auth.middleware.js';
+import { authenticate, requireRole, optionalAuth } from './middleware/auth.middleware.js';
 import { aiService } from './services/ai.service.js';
 import { apifyService } from './services/apify.service.js';
 
@@ -135,8 +135,8 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Reset demo database endpoint (Admin)
-app.post('/api/admin/reset-db', async (req, res) => {
+// Reset demo database endpoint (Strictly Admin only)
+app.post('/api/admin/reset-db', authenticate, requireRole('ADMIN'), async (req, res) => {
   try {
     await db.run('DROP TABLE IF EXISTS campaigns');
     await db.run('DROP TABLE IF EXISTS brands');

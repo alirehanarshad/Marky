@@ -16,9 +16,26 @@ export default function AppLayout({ children }) {
   const [brandsList, setBrandsList] = useState([]);
 
   useEffect(() => {
+    // If not on login page and no token found, redirect to login
+    if (typeof window !== 'undefined' && pathname !== '/login') {
+      const token = localStorage.getItem('marky_token');
+      if (!token) {
+        window.location.href = '/login';
+        return;
+      }
+    }
     // Warm critical platform caches in background on initial boot
     api.preloadCoreData();
-  }, []);
+  }, [pathname]);
+
+  // If on login route, render standalone clean login layout
+  if (pathname === '/login') {
+    return (
+      <div className="min-h-screen w-screen overflow-y-auto bg-[#0B091B]">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#FCFBFA] relative selection:bg-[#7A5DBB]/20 selection:text-[#4239C4]">

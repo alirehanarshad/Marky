@@ -4,16 +4,24 @@ import { aiService } from '../services/ai.service.js';
 
 const router = Router();
 
-// GET all saved content
+// GET all saved content (tenant & brand scoped)
 router.get('/', async (req, res) => {
   try {
-    const { tool_id } = req.query;
-    let query = `SELECT * FROM saved_content`;
+    const { tool_id, brand_id } = req.query;
+    let query = `SELECT * FROM saved_content WHERE 1=1`;
     const params = [];
 
     if (tool_id) {
-      query += ` WHERE tool_id = ?`;
+      query += ` AND tool_id = ?`;
       params.push(tool_id);
+    }
+    if (brand_id && brand_id !== 'undefined' && brand_id !== 'All') {
+      query += ` AND (brand_id = ? OR brand_id IS NULL)`;
+      params.push(brand_id);
+    }
+    if (req.user && req.user.role !== 'ADMIN') {
+      query += ` AND (user_id = ? OR user_id IS NULL)`;
+      params.push(req.user.id);
     }
     query += ` ORDER BY created_at DESC`;
 
@@ -27,12 +35,14 @@ router.get('/', async (req, res) => {
 // POST save generated content
 router.post('/', async (req, res) => {
   try {
-    const { tool_id, tool_title, input_summary, output_content, status } = req.body;
+    const { tool_id, tool_title, input_summary, output_content, status, brand_id } = req.body;
     if (!output_content) return res.status(400).json({ success: false, error: 'Output content required' });
 
+    const userId = req.user?.id || 1;
+
     const result = await db.run(
-      `INSERT INTO saved_content (tool_id, tool_title, input_summary, output_content, status) VALUES (?, ?, ?, ?, ?)`,
-      [tool_id || 'custom', tool_title || 'Marketing Copy', input_summary || '', output_content, status || 'Done']
+      `INSERT INTO saved_content (tool_id, tool_title, input_summary, output_content, status, brand_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [tool_id || 'custom', tool_title || 'Marketing Copy', input_summary || '', output_content, status || 'Done', brand_id || null, userId]
     );
 
     const saved = await db.get(`SELECT * FROM saved_content WHERE id = ?`, [result.lastID]);
@@ -51,6 +61,10 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Content item not found' });
     }
 
+    if (req.user && req.user.role !== 'ADMIN' && existing.user_id && existing.user_id !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied: You do not own this content record.' });
+    }
+
     await db.run(
       `UPDATE saved_content 
        SET tool_title = COALESCE(?, tool_title), 
@@ -63,6 +77,25 @@ router.put('/:id', async (req, res) => {
 
     const updated = await db.get(`SELECT * FROM saved_content WHERE id = ?`, [req.params.id]);
     res.json({ success: true, data: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// DELETE content item
+router.delete('/:id', async (req, res) => {
+  try {
+    const existing = await db.get(`SELECT * FROM saved_content WHERE id = ?`, [req.params.id]);
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Content item not found' });
+    }
+
+    if (req.user && req.user.role !== 'ADMIN' && existing.user_id && existing.user_id !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied: You do not own this content record.' });
+    }
+
+    await db.run('DELETE FROM saved_content WHERE id = ?', [req.params.id]);
+    res.json({ success: true, message: 'Content item deleted' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
