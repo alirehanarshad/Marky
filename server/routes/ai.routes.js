@@ -149,13 +149,15 @@ ${calc.guidance.map((g) => `- ${g}`).join('\n')}`;
     const TOOL_PROMPTS = toolPromptModule.default || {};
     const dedicatedPrompt = TOOL_PROMPTS[toolId];
 
-    const systemPrompt = dedicatedPrompt
-      ? `${dedicatedPrompt}\n\n${brandContextStr}\n\nStructure your response cleanly using markdown with bold headers, bullet points, and copy blocks ready to copy-paste.`
-      : `You are an elite direct-response copywriter, performance marketing architect, and e-commerce growth specialist.
-${brandContextStr}
-Provide extremely punchy, actionable, high-converting copy or strategic output based on the user request.
-Structure your response cleanly using markdown with bold headers, bullet points, and copy blocks ready to copy-paste.
-Keep the tone energetic, data-backed, and optimized for high CTR and sales conversions.`;
+    const systemPrompt = (dedicatedPrompt ? `${dedicatedPrompt}\n\n${brandContextStr}` : `You are an elite direct-response copywriter, performance marketing architect, and e-commerce growth specialist.\n${brandContextStr}`) + `
+
+FORMATTING INSTRUCTIONS:
+- Use clean, structured Markdown with ## for primary sections (e.g. ## Ad Variation 1, ## Key Hook Variations).
+- Use ### for sub-components (e.g. ### Primary Text, ### Headline, ### Description, ### Call to Action).
+- For every copy snippet that the user can copy and run, format it as a blockquote with > "Your high-converting copy here".
+- For lists and key benefits, use bullet points with - and bold key phrases.
+- Never output raw JSON or escaped quotes like \\" or unrendered markdown markers.
+- Write polished, high-converting, realistic marketing copy ready to launch.`;
 
     const userPrompt = `Tool: ${toolTitle} (${category})
 Inputs provided:

@@ -465,7 +465,7 @@ export default function SettingsPage() {
       />
 
       {/* 2. Role-Aware Navigation Tabs */}
-      <div className="marky-card p-4">
+      <div className="marky-card p-3 md:p-4 overflow-hidden max-w-full">
         <Tabs
           tabs={tabs}
           activeTab={activeTab}

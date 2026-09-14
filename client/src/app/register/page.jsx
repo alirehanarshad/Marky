@@ -132,15 +132,17 @@ function RegisterContent() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
             <div className="space-y-1">
               <label className="text-xs font-bold text-[#141226]">Full Name</label>
               <div className="relative">
                 <User className="w-4 h-4 text-[#8E8AAB] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
+                  name="fullname"
                   required
-                  placeholder="Ali Rehan"
+                  autoComplete="off"
+                  placeholder="Your Name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#F7F5F2] border border-[#ECE8E3] text-xs font-medium text-[#141226] placeholder-[#8E8AAB] focus:bg-white focus:outline-none focus:border-[#4239C4] focus:ring-1 focus:ring-[#4239C4] transition-all"
@@ -154,7 +156,9 @@ function RegisterContent() {
                 <Mail className="w-4 h-4 text-[#8E8AAB] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
+                  name="email"
                   required
+                  autoComplete="new-password"
                   placeholder="name@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -169,7 +173,9 @@ function RegisterContent() {
                 <Lock className="w-4 h-4 text-[#8E8AAB] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="password"
+                  name="new-password"
                   required
+                  autoComplete="new-password"
                   placeholder="Minimum 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -184,7 +190,9 @@ function RegisterContent() {
                 <Lock className="w-4 h-4 text-[#8E8AAB] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="password"
+                  name="confirm-password"
                   required
+                  autoComplete="new-password"
                   placeholder="Re-enter password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}

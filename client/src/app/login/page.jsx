@@ -105,15 +105,17 @@ function LoginContent() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
             <div className="space-y-1">
               <label className="text-xs font-bold text-[#141226]">Email Address</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-[#8E8AAB] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
+                  name="email"
                   required
-                  placeholder="admin@marky.ai"
+                  autoComplete="off"
+                  placeholder="name@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#F7F5F2] border border-[#ECE8E3] text-xs font-medium text-[#141226] placeholder-[#8E8AAB] focus:bg-white focus:outline-none focus:border-[#4239C4] focus:ring-1 focus:ring-[#4239C4] transition-all"
@@ -122,15 +124,14 @@ function LoginContent() {
             </div>
 
             <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-[#141226]">Password</label>
-                <span className="text-[11px] text-[#6C6782]">Default: Admin@Marky2026!</span>
-              </div>
+              <label className="text-xs font-bold text-[#141226]">Password</label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-[#8E8AAB] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="password"
+                  name="password"
                   required
+                  autoComplete="new-password"
                   placeholder="••••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -157,38 +158,6 @@ function LoginContent() {
               )}
             </button>
           </form>
-
-          {/* Quick Demo Credentials Helper */}
-          <div className="p-3.5 rounded-2xl bg-[#FCFBFA] border border-[#ECE8E3] space-y-2 text-xs">
-            <p className="font-bold text-[#141226] flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#7A5DBB]" />
-              <span>Quick Login Credentials</span>
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('admin@marky.ai');
-                  setPassword('Admin@Marky2026!');
-                }}
-                className="p-2 rounded-xl bg-white border border-[#ECE8E3] hover:border-[#4239C4] text-left transition-colors cursor-pointer"
-              >
-                <div className="font-bold text-[#141226] text-[11px]">Administrator</div>
-                <div className="text-[10px] text-[#6C6782]">Full System Access</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('user@marky.ai');
-                  setPassword('User@Marky2026!');
-                }}
-                className="p-2 rounded-xl bg-white border border-[#ECE8E3] hover:border-[#7A5DBB] text-left transition-colors cursor-pointer"
-              >
-                <div className="font-bold text-[#141226] text-[11px]">Standard Marketer</div>
-                <div className="text-[10px] text-[#6C6782]">Standard Tenant</div>
-              </button>
-            </div>
-          </div>
 
           <div className="pt-2 border-t border-[#ECE8E3] text-center text-xs text-[#6C6782]">
             Don't have an account?{' '}

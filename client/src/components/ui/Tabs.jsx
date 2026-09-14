@@ -50,7 +50,7 @@ export default function Tabs({
   }
 
   return (
-    <div className="inline-flex p-1 rounded-xl bg-[#F7F6FA] border border-[#ECE8E3] gap-1 overflow-x-auto">
+    <div className="flex flex-wrap items-center p-1 rounded-xl bg-[#F7F6FA] border border-[#ECE8E3] gap-1 max-w-full">
       {tabs.map((tab) => {
         const isActive = activeTab === (tab.id || tab);
         const label = tab.label || tab;

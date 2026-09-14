@@ -419,48 +419,11 @@ export default function ToolRunnerPage() {
                 </div>
               ) : output ? (
                 <div className="space-y-4 font-sans select-text">
-                  {output.split(/(?=###?\s+)/).map((section, sIdx) => {
-                    const lines = section.trim().split('\n');
-                    const headerLine = lines[0]?.replace(/^###?\s+/, '').trim();
-                    const body = lines.slice(1).join('\n').trim();
-
-                    if (!headerLine && !body) return null;
-
-                    return (
-                      <div key={sIdx} className="p-4 rounded-xl bg-white border border-[#ECE8E3] shadow-2xs space-y-2 group">
-                        <div className="flex items-center justify-between border-b border-[#ECE8E3]/60 pb-1.5">
-                          <h4 className="font-extrabold text-[11px] uppercase tracking-wider text-[#4239C4]">
-                            {headerLine || 'Campaign Strategy & Copy'}
-                          </h4>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard.writeText(body || headerLine);
-                              setCopiedSection(`sec-${sIdx}`);
-                              setTimeout(() => setCopiedSection(''), 1800);
-                            }}
-                            className="flex items-center gap-1 text-[10px] font-bold text-[#7A5DBB] hover:text-[#4239C4] px-2 py-0.5 rounded bg-[#7A5DBB]/8 hover:bg-[#7A5DBB]/15 transition-colors cursor-pointer"
-                            title="Copy this section"
-                          >
-                            {copiedSection === `sec-${sIdx}` ? (
-                              <>
-                                <Check className="w-3 h-3 text-emerald-600" />
-                                <span className="text-emerald-600">Copied!</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3 h-3" />
-                                <span>Copy Section</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                        <div className="text-xs text-[#141226] leading-relaxed whitespace-pre-wrap">
-                          {body || headerLine}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  <ToolMarkdownView content={output} onCopySnippet={(txt) => {
+                    navigator.clipboard.writeText(txt);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }} />
                 </div>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-center py-20 text-[#8E8AAB] space-y-3">
@@ -479,4 +442,243 @@ export default function ToolRunnerPage() {
       </div>
     </div>
   );
+}
+
+// Rich Markdown Content Document Renderer
+function ToolMarkdownView({ content, onCopySnippet }) {
+  if (!content) return null;
+
+  const lines = content.split('\n');
+  const renderedElements = [];
+  let currentKey = 0;
+  let inList = false;
+  let listItems = [];
+  let inTable = false;
+  let tableRows = [];
+
+  const flushList = () => {
+    if (listItems.length > 0) {
+      renderedElements.push(
+        <ul key={`list-${currentKey++}`} className="space-y-1.5 my-3 pl-2">
+          {listItems}
+        </ul>
+      );
+      listItems = [];
+      inList = false;
+    }
+  };
+
+  const flushTable = () => {
+    if (tableRows.length > 0) {
+      const headerRow = tableRows[0];
+      const dataRows = tableRows.slice(1);
+      renderedElements.push(
+        <div key={`table-${currentKey++}`} className="my-4 overflow-x-auto rounded-xl border border-[#ECE8E3]">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-[#F7F6FA] border-b border-[#ECE8E3]">
+                {headerRow.map((cell, cIdx) => (
+                  <th key={cIdx} className="px-3.5 py-2.5 font-bold text-[#141226]">
+                    {renderInlineText(cell)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#ECE8E3] bg-white">
+              {dataRows.map((row, rIdx) => (
+                <tr key={rIdx} className="hover:bg-[#FCFBFA]">
+                  {row.map((cell, cIdx) => (
+                    <td key={cIdx} className="px-3.5 py-2 text-[#3E3A52]">
+                      {renderInlineText(cell)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      tableRows = [];
+      inTable = false;
+    }
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i];
+    const line = rawLine.trim();
+
+    // Table row detection
+    if (line.startsWith('|') && line.endsWith('|')) {
+      flushList();
+      if (/^\|[\s\-:|]+\|$/.test(line)) {
+        // Table separator row, ignore
+        continue;
+      }
+      const cells = line.split('|').slice(1, -1).map(c => c.trim());
+      inTable = true;
+      tableRows.push(cells);
+      continue;
+    } else {
+      flushTable();
+    }
+
+    // Horizontal Rule
+    if (line === '---' || line === '***' || line === '___') {
+      flushList();
+      renderedElements.push(
+        <div key={`hr-${currentKey++}`} className="my-4 border-t border-[#ECE8E3] relative flex items-center justify-center">
+          <span className="bg-white px-2.5 text-[9px] uppercase tracking-widest text-[#9894AD] font-bold">✦</span>
+        </div>
+      );
+      continue;
+    }
+
+    // Heading 1
+    if (line.startsWith('# ')) {
+      flushList();
+      const text = line.replace('# ', '').replace(/\*\*/g, '');
+      renderedElements.push(
+        <h1 key={`h1-${currentKey++}`} className="text-lg md:text-xl font-black text-[#141226] tracking-tight mt-4 mb-2 flex items-center gap-2 border-b border-[#ECE8E3] pb-2">
+          <span className="w-2 h-5 rounded-full bg-gradient-to-b from-[#4239C4] to-[#7A5DBB]" />
+          <span>{text}</span>
+        </h1>
+      );
+      continue;
+    }
+
+    // Heading 2
+    if (line.startsWith('## ')) {
+      flushList();
+      const text = line.replace('## ', '').replace(/\*\*/g, '');
+      renderedElements.push(
+        <h2 key={`h2-${currentKey++}`} className="text-sm md:text-base font-extrabold text-[#141226] tracking-tight mt-4 mb-1.5 flex items-center gap-2">
+          <span className="w-1.5 h-3.5 rounded-full bg-[#7A5DBB]" />
+          <span>{text}</span>
+        </h2>
+      );
+      continue;
+    }
+
+    // Heading 3
+    if (line.startsWith('### ')) {
+      flushList();
+      const text = line.replace('### ', '').replace(/\*\*/g, '');
+      renderedElements.push(
+        <h3 key={`h3-${currentKey++}`} className="text-xs md:text-sm font-bold text-[#4239C4] mt-3 mb-1">
+          {text}
+        </h3>
+      );
+      continue;
+    }
+
+    // Blockquote / Ad Copy Snippet Callout
+    if (line.startsWith('>')) {
+      flushList();
+      const quoteText = line.replace(/^>\s*/, '').replace(/^"|"$/g, '').trim();
+      renderedElements.push(
+        <div
+          key={`quote-${currentKey++}`}
+          className="my-2.5 p-3.5 rounded-xl bg-gradient-to-br from-[#4239C4]/5 via-[#7A5DBB]/5 to-transparent border border-[#7A5DBB]/30 relative overflow-hidden group hover:border-[#4239C4]/50 transition-all"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="space-y-0.5">
+              <span className="text-[10px] font-extrabold text-[#4239C4] uppercase tracking-wider block">
+                Copy Creative Snippet
+              </span>
+              <p className="text-xs font-semibold text-[#141226] italic leading-relaxed">
+                "{quoteText}"
+              </p>
+            </div>
+
+            {onCopySnippet && (
+              <button
+                type="button"
+                onClick={() => onCopySnippet(quoteText)}
+                className="opacity-80 group-hover:opacity-100 transition-opacity p-1 rounded-md bg-white border border-[#ECE8E3] hover:bg-slate-50 text-[#4239C4] text-[10px] font-bold flex items-center gap-1 shrink-0 shadow-xs cursor-pointer"
+                title="Copy snippet"
+              >
+                <Copy className="w-3 h-3" />
+                <span>Copy</span>
+              </button>
+            )}
+          </div>
+        </div>
+      );
+      continue;
+    }
+
+    // Bullet List Item
+    if (line.startsWith('* ') || line.startsWith('- ') || line.startsWith('• ')) {
+      inList = true;
+      const contentText = line.replace(/^[\*\-•]\s+/, '');
+      listItems.push(
+        <li key={`li-${currentKey++}`} className="flex items-start gap-2 text-xs text-[#3E3A52] leading-relaxed">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#7A5DBB] shrink-0 mt-1.5" />
+          <div>{renderInlineText(contentText)}</div>
+        </li>
+      );
+      continue;
+    }
+
+    // Numbered Item
+    if (/^\d+\.\s+/.test(line)) {
+      flushList();
+      const numMatch = line.match(/^(\d+)\.\s+/);
+      const number = numMatch ? numMatch[1] : '1';
+      const contentText = line.replace(/^\d+\.\s+/, '');
+      renderedElements.push(
+        <div key={`num-${currentKey++}`} className="flex items-start gap-2.5 my-1.5 p-2 rounded-lg bg-[#F7F6FA] border border-[#ECE8E3]">
+          <span className="w-5 h-5 rounded-md bg-white text-[#4239C4] font-black text-[10px] flex items-center justify-center border border-[#ECE8E3] shrink-0">
+            {number}
+          </span>
+          <div className="text-xs text-[#141226] leading-relaxed pt-0.5">
+            {renderInlineText(contentText)}
+          </div>
+        </div>
+      );
+      continue;
+    }
+
+    // Empty line
+    if (!line) {
+      flushList();
+      continue;
+    }
+
+    // Regular Paragraph
+    flushList();
+    renderedElements.push(
+      <p key={`p-${currentKey++}`} className="text-xs text-[#3E3A52] leading-relaxed my-1.5">
+        {renderInlineText(line)}
+      </p>
+    );
+  }
+
+  flushList();
+  flushTable();
+  return <div className="space-y-1">{renderedElements}</div>;
+}
+
+// Helper to format inline bold, italic, code
+function renderInlineText(text) {
+  if (!text) return '';
+  // Split on bold markdown **...**
+  const parts = text.split(/(\*\*.*?\*\*|\`.*?\`)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <strong key={idx} className="font-extrabold text-[#141226]">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return (
+        <code key={idx} className="px-1.5 py-0.5 rounded bg-slate-100 text-[#4239C4] font-mono text-[11px]">
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return part;
+  });
 }

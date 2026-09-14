@@ -21,13 +21,28 @@ class AIService {
   }
 
   getStatus() {
-    const apiKey = process.env.GEMINI_API_KEY;
-    const isConfigured = Boolean(apiKey && apiKey.trim() !== '' && !apiKey.includes('YOUR_API_KEY'));
+    const geminiKey = process.env.GEMINI_API_KEY;
+    const isGemini = Boolean(geminiKey && geminiKey.trim() !== '' && !geminiKey.includes('YOUR_API_KEY') && !geminiKey.startsWith('AQ.'));
+    const groqKey = process.env.GROQ_API_KEY;
+    const isGroq = Boolean(groqKey && groqKey.trim() !== '' && !groqKey.includes('YOUR_'));
+    const isConfigured = isGemini || isGroq;
+
+    let activeProvider = 'Local AI Engine (Smart Fallback)';
+    let preview = null;
+
+    if (isGemini) {
+      activeProvider = 'Live Gemini API';
+      preview = `${geminiKey.substring(0, 4)}...${geminiKey.substring(geminiKey.length - 4)}`;
+    } else if (isGroq) {
+      activeProvider = 'Live Groq Ultra-Fast LLM (Llama / GPT)';
+      preview = `${groqKey.substring(0, 4)}...${groqKey.substring(groqKey.length - 4)}`;
+    }
+
     return {
       configured: isConfigured,
-      keyPreview: isConfigured ? `${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}` : null,
-      defaultModel: this.defaultModel,
-      mode: isConfigured ? 'Live Gemini API' : 'Local AI Engine (Smart Fallback)'
+      keyPreview: preview,
+      defaultModel: isGemini ? this.defaultModel : (isGroq ? 'openai/gpt-oss-20b' : 'smart-local'),
+      mode: activeProvider
     };
   }
 

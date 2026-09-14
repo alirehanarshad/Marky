@@ -17,6 +17,7 @@ import {
 import api from '../lib/api';
 import UpPromptButton from './ui/UpPromptButton';
 import Portal, { useBodyScrollLock } from './ui/Portal';
+import MarkdownDocumentView from './ui/MarkdownDocumentView';
 
 export default function ToolRunnerModal({ tool, isOpen, onClose, onSavedToLibrary }) {
   useBodyScrollLock(isOpen);
@@ -390,49 +391,15 @@ export default function ToolRunnerModal({ tool, isOpen, onClose, onSavedToLibrar
                   <p className="text-[11px] text-[#6C6782]">Synthesizing audience psychology and conversion hooks</p>
                 </div>
               ) : output ? (
-                <div className="space-y-4 font-sans select-text">
-                  {output.split(/(?=###?\s+)/).map((section, sIdx) => {
-                    const lines = section.trim().split('\n');
-                    const headerLine = lines[0]?.replace(/^###?\s+/, '').trim();
-                    const body = lines.slice(1).join('\n').trim();
-
-                    if (!headerLine && !body) return null;
-
-                    return (
-                      <div key={sIdx} className="p-3.5 rounded-xl bg-white border border-[#ECE8E3] shadow-2xs space-y-2 group">
-                        <div className="flex items-center justify-between border-b border-[#ECE8E3]/60 pb-1.5">
-                          <h4 className="font-extrabold text-[11px] uppercase tracking-wider text-[#4239C4]">
-                            {headerLine || 'Campaign Strategy & Copy'}
-                          </h4>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard.writeText(body || headerLine);
-                              setCopiedSection(`sec-${sIdx}`);
-                              setTimeout(() => setCopiedSection(''), 1800);
-                            }}
-                            className="flex items-center gap-1 text-[10px] font-bold text-[#7A5DBB] hover:text-[#4239C4] px-2 py-0.5 rounded bg-[#7A5DBB]/8 hover:bg-[#7A5DBB]/15 transition-colors cursor-pointer"
-                            title="Copy this section"
-                          >
-                            {copiedSection === `sec-${sIdx}` ? (
-                              <>
-                                <Check className="w-3 h-3 text-emerald-600" />
-                                <span className="text-emerald-600">Copied!</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3 h-3" />
-                                <span>Copy Section</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                        <div className="text-xs text-[#141226] leading-relaxed whitespace-pre-wrap">
-                          {body || headerLine}
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="space-y-3 font-sans select-text">
+                  <MarkdownDocumentView
+                    content={output}
+                    onCopySnippet={(txt) => {
+                      navigator.clipboard.writeText(txt);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                  />
                 </div>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-center py-12 text-slate-400 space-y-2">
